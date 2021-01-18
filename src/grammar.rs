@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
-use crate::strconstr::{self, StringConstraint};
+use crate::str_constr::{self, StringConstraint};
 
 #[macro_export]
 macro_rules! valstr {
@@ -103,7 +103,7 @@ impl<'a> Constraint<'a> {
         if let Some(Value::String(field_type)) = map.get(&TYPE) {
             match field_type.as_str() {
                 "string" => {
-                    match strconstr::build(field_name, map, path) {
+                    match str_constr::build(field_name, map, path) {
                         Ok(constr) => YamlParseResult::from(Ok(Constraint::Str(constr))),
                         Err(e) => YamlParseResult::from(Err(e))
                     }

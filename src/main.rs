@@ -1,5 +1,5 @@
 mod grammar;
-mod strconstr;
+mod str_constr;
 
 fn main() {
     println!("Hello, world!");

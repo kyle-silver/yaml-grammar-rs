@@ -1,3 +1,3 @@
 // public API
 pub mod grammar;
-pub mod strconstr;
+pub mod str_constr;
