@@ -1,5 +1,8 @@
 mod grammar;
+mod string_constraint;
 
 fn main() {
-    println!("Hello, world!");
+    
+    // println!("{:?}", v1);
+    // println!("{:?}", v2);
 }
