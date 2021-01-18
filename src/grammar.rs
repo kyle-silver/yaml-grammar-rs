@@ -17,6 +17,7 @@ pub enum PEType<'a> {
     IncorrectType(&'a Value),
     Regex(regex::Error),
     InvalidDefault(&'a Value),
+    InvalidAbsolutePath(&'a Value),
 }
 
 #[derive(Debug)]
@@ -64,6 +65,23 @@ impl<'a> IntoIterator for YamlParseResult<'a> {
 pub enum ValueRef<'a, T> {
     Literal(&'a T),
     AbsolutePath(Vec<&'a Value>)
+}
+
+impl<T> ValueRef<'_, T> {
+    pub fn abs_path(path: &Vec<Value>) -> Result<ValueRef<T>, PEType> {
+        let res = path.iter()
+            .map(|val| match val {
+                Value::Bool(_) => Ok(val),
+                Value::Number(_) => Ok(val),
+                Value::String(_) => Ok(val),
+                _ => Err(PEType::InvalidAbsolutePath(val)),
+            })
+            .collect();
+        match res {
+            Ok(abs_path) => Ok(ValueRef::AbsolutePath(abs_path)),
+            Err(e) => Err(e)
+        }
+    }
 }
 
 #[derive(Debug)]
