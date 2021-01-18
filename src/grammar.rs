@@ -10,14 +10,24 @@ macro_rules! valstr {
 }
 
 #[derive(Debug)]
+pub enum PEType<'a> {
+    Unsupported,
+    UnknownType(&'a str),
+    InvalidTypeInfo(&'a Value),
+    IncorrectType(&'a Value),
+    Regex(regex::Error),
+    InvalidDefault(&'a Value),
+}
+
+#[derive(Debug)]
 pub struct ParseErr<'a> {
     path: Vec<&'a Value>,
-    msg: String,
+    err: PEType<'a>,
 }
 
 impl<'a> ParseErr<'a> {
-    pub fn new(path: &[&'a Value], msg: String) -> ParseErr<'a> {
-        ParseErr { path: path.to_vec(), msg }
+    pub fn new(path: &[&'a Value], err: PEType<'a>) -> ParseErr<'a> {
+        ParseErr { path: path.to_vec(), err }
     }
 }
 
@@ -28,8 +38,8 @@ pub enum YamlParseResult<'a> {
 }
 
 impl<'a> YamlParseResult<'a> {
-    fn err(path: &[&'a Value], msg: String) -> YamlParseResult<'a> {
-        YamlParseResult::Single(Err(ParseErr::new(path, msg)))
+    fn err(path: &[&'a Value], err: PEType<'a>) -> YamlParseResult<'a> {
+        YamlParseResult::Single(Err(ParseErr::new(path, err)))
     }
 
     fn from(res: Result<Constraint<'a>, ParseErr<'a>>) -> YamlParseResult<'a> {
@@ -68,20 +78,20 @@ impl<'a> Constraint<'a> {
         path.push(field_name);
         match value {
             Value::Null => {
-                YamlParseResult::err(&path, String::from("unimplemented"))
+                YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::Bool(_) => {
-                YamlParseResult::err(&path, String::from("unimplemented"))
+                YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::Number(_) => {
-                YamlParseResult::err(&path, String::from("unimplemented"))
+                YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::String(field_type) => {
                 let constr = Constraint::for_default(field_name, field_type, &path);
                 YamlParseResult::from(constr)
             }
             Value::Sequence(_) => {
-                YamlParseResult::err(&path, String::from("unimplemented"))
+                YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::Mapping(m) => {
                 Constraint::for_mapping(field_name, m, &path)
@@ -89,10 +99,10 @@ impl<'a> Constraint<'a> {
         }
     }
 
-    fn for_default(field_name: &'a Value, field_type: &str, path: &[&'a Value]) -> Result<Constraint<'a>, ParseErr<'a>> {
+    fn for_default(field_name: &'a Value, field_type: &'a str, path: &[&'a Value]) -> Result<Constraint<'a>, ParseErr<'a>> {
         match field_type {
             "string" => Ok(Constraint::Str(StringConstraint::default(field_name))),
-            _ => Err(ParseErr::new(path, format!("Unknown type \"{:?}\"", field_type)))
+            _ => Err(ParseErr::new(path, PEType::UnknownType(field_type)))
         }
     }
 
@@ -108,10 +118,10 @@ impl<'a> Constraint<'a> {
                         Err(e) => YamlParseResult::from(Err(e))
                     }
                 }
-                _ => YamlParseResult::err(path, format!("Unknown type \"{:?}\"", field_type)),
+                _ => YamlParseResult::err(path, PEType::UnknownType(field_type)),
             }
         } else {
-            YamlParseResult::err(path, format!("Type information for field \"{:?}\" was missing or incorrect", field_name))
+            YamlParseResult::err(path, PEType::InvalidTypeInfo(field_name))
         }
     }
 }

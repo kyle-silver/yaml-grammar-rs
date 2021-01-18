@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
 
-use crate::grammar::{ParseErr, ValueRef};
+use crate::grammar::{PEType, ParseErr, ValueRef};
 use crate::valstr;
 
 #[derive(Debug)]
@@ -36,11 +36,27 @@ struct StrConstrBuilder<'a, 'b> {
     field_name: &'a Value,
     map: &'a Mapping,
     path: &'b [&'a Value],
+    default: Option<&'a String>
 }
 
 impl<'a, 'b> StrConstrBuilder<'a, 'b> {
-    fn new(field_name: &'a Value, map: &'a Mapping, path: &'b [&'a Value]) -> StrConstrBuilder<'a, 'b> {
-        StrConstrBuilder { field_name, map, path, }
+    fn new(field_name: &'a Value, map: &'a Mapping, path: &'b [&'a Value]) -> Result<StrConstrBuilder<'a, 'b>, ParseErr<'a>> {
+        let default = StrConstrBuilder::field_default(map, path)?;
+        Ok(StrConstrBuilder { field_name, map, path, default })
+    }
+
+    fn field_default(map: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a String>, ParseErr<'a>> {
+        lazy_static! {
+            static ref DEFAULT: Value = valstr!(String::from("default"));
+        }
+        if let Some(val) = map.get(&DEFAULT) {
+            match val {
+                Value::String(s) => Ok(Some(s)),
+                _ => Err(ParseErr::new(path, PEType::InvalidDefault(val)))
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     fn from_mapping(&self) -> Result<StringConstraint<'a>, ParseErr<'a>> {
@@ -52,43 +68,49 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
             static ref NEQ: Value = valstr!(String::from("neq"));
             static ref DEFAULT: Value = valstr!(String::from("default"));
         }
-        let default = self.field_default()?;
         if let Some(val) = self.map.get(&REGEX) {
-            return self.regex(val, default);
+            return self.regex(val);
         }
         Ok(StringConstraint::default(self.field_name))
     }
 
-    fn field_default(&self) -> Result<Option<&'a String>, ParseErr<'a>> {
-        lazy_static! {
-            static ref DEFAULT: Value = valstr!(String::from("default"));
-        }
-        if let Some(val) = self.map.get(&DEFAULT) {
-            match val {
-                Value::String(s) => Ok(Some(s)),
-                _ => Err(ParseErr::new(self.path, format!("Default is an invalid type")))
-            }
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn regex(&self, re: &'a Value, default: Option<&'a String>) -> Result<StringConstraint<'a>, ParseErr<'a>> {
+    fn regex(&self, re: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         if let Value::String(re) = re {
             match Regex::new(re) {
                 Ok(regex) => Ok(StringConstraint { 
                     field_name: self.field_name,
                     constr: StrConstr::Regex(regex),
-                    default,
+                    default: self.default,
                 }),
-                Err(e) => Err(ParseErr::new(self.path, format!("Could not parse regex \"{}\", \n{}", re, e)))
+                Err(e) => Err(ParseErr::new(self.path, PEType::Regex(e)))
             }
         } else {
-            Err(ParseErr::new(self.path, String::from("Type error for key \"regex\"")))
+            Err(ParseErr::new(self.path, PEType::IncorrectType(re)))
         }
     }
+
+    // fn allowed(&self, allowed: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
+    //     if let Value::Sequence(seq) = allowed {
+    //         let res = seq.iter()
+    //             .map(|val| match val {
+    //                 Value::String(literal) => Ok(ValueRef::Literal(literal)),
+    //                 Value::Sequence(abs_path) => Ok(ValueRef::AbsolutePath(abs_path)),
+    //                 _ => 
+    //             })
+    //     }
+    // }
 }
 
+// impl<'a> ValueRef<'a, String> {
+//     fn new(value: &'a Value, path: &[&'a Value]) -> Result<ValueRef<'a, String>, ParseErr<'a>> {
+//         match value {
+//             Value::String(literal) => Ok(ValueRef::Literal(literal)),
+//             Value::Sequence(abs_path) => Ok(ValueRef::AbsolutePath(abs_path.clone())),     
+//             _ => ParseErr::new(path, msg)       
+//         }
+//     }
+// }
+
 pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) -> Result<StringConstraint<'a>, ParseErr<'a>> {
-    StrConstrBuilder::new(field_name, map, path).from_mapping()
+    StrConstrBuilder::new(field_name, map, path)?.from_mapping()
 }
