@@ -100,15 +100,9 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
 
     fn allowed(&self, allowed: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         if let Value::Sequence(seq) = allowed {
-            let res = seq.iter()
-                .map(|val| ValueRef::new(val, self.path))
-                .collect();
+            let res = seq.iter().map(|val| ValueRef::new(val, self.path)).collect();
             match res {
-                Ok(vals) => Ok(StringConstraint { 
-                    field_name: self.field_name,
-                    constr: StrConstr::Allowed(vals),
-                    default: self.default,
-                }),
+                Ok(vals) => Ok(StringConstraint::new(self.field_name, StrConstr::Allowed(vals), self.default)),
                 Err(err) => Err(err),
             }
         } else {
@@ -118,15 +112,9 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
 
     fn disallowed(&self, disallowed: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         if let Value::Sequence(seq) = disallowed {
-            let res = seq.iter()
-                .map(|val| ValueRef::new(val, self.path))
-                .collect();
+            let res = seq.iter().map(|val| ValueRef::new(val, self.path)).collect();
             match res {
-                Ok(vals) => Ok(StringConstraint { 
-                    field_name: self.field_name,
-                    constr: StrConstr::Disallowed(vals),
-                    default: self.default,
-                }),
+                Ok(vals) => Ok(StringConstraint::new(self.field_name, StrConstr::Disallowed(vals), self.default)),
                 Err(err) => Err(err),
             }
         } else {
