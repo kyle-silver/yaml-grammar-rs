@@ -2,14 +2,14 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
 
-use crate::grammar::{PEType, ParseErr, ValueRef};
+use crate::{grammar::{PEType, ParseErr}, value_ref::ValueRef};
 use crate::valstr;
 
 #[derive(Debug)]
 pub enum StrConstr<'a> {
     Allowed(Vec<ValueRef<'a, String>>),
     Disallowed(Vec<ValueRef<'a, String>>),
-    Regex(Regex),
+    Regex(Box<Regex>),
     Equals(ValueRef<'a, String>),
     NotEquals(ValueRef<'a, String>),
     Any,
@@ -18,7 +18,7 @@ pub enum StrConstr<'a> {
 #[derive(Debug)]
 pub struct StringConstraint<'a> {
     field_name: &'a Value,
-    constr: StrConstr<'a>,
+    pub constr: StrConstr<'a>,
     default: Option<&'a String>
 }
 
@@ -77,7 +77,13 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
         if let Some(val) = self.map.get(&DISALLOWED) {
             return self.disallowed(val);
         }
-        if let Some(_) = self.default {
+        if let Some(val) = self.map.get(&EQ) {
+            return self.eq(val);
+        }
+        if let Some(val) = self.map.get(&NEQ) {
+            return self.neq(val);
+        }
+        if self.default.is_some() {
             return Ok(StringConstraint::new(self.field_name, StrConstr::Any, self.default));
         }
         Ok(StringConstraint::default(self.field_name))
@@ -88,7 +94,7 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
             match Regex::new(re) {
                 Ok(regex) => Ok(StringConstraint { 
                     field_name: self.field_name,
-                    constr: StrConstr::Regex(regex),
+                    constr: StrConstr::Regex(Box::new(regex)),
                     default: self.default,
                 }),
                 Err(e) => Err(ParseErr::new(self.path, PEType::Regex(e)))
@@ -100,10 +106,10 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
 
     fn allowed(&self, allowed: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         if let Value::Sequence(seq) = allowed {
-            let res = seq.iter().map(|val| ValueRef::new(val, self.path)).collect();
+            let res = seq.iter().map(ValueRef::new).collect();
             match res {
                 Ok(vals) => Ok(StringConstraint::new(self.field_name, StrConstr::Allowed(vals), self.default)),
-                Err(err) => Err(err),
+                Err(err) => Err(ParseErr::new(self.path, err)),
             }
         } else {
             Err(ParseErr::new(self.path, PEType::IncorrectType(allowed)))
@@ -112,28 +118,37 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
 
     fn disallowed(&self, disallowed: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         if let Value::Sequence(seq) = disallowed {
-            let res = seq.iter().map(|val| ValueRef::new(val, self.path)).collect();
+            let res = seq.iter().map(ValueRef::new).collect();
             match res {
                 Ok(vals) => Ok(StringConstraint::new(self.field_name, StrConstr::Disallowed(vals), self.default)),
-                Err(err) => Err(err),
+                Err(err) => Err(ParseErr::new(self.path, err)),
             }
         } else {
             Err(ParseErr::new(self.path, PEType::IncorrectType(disallowed)))
         }
     }
+
+    fn eq(&self, to: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
+        match ValueRef::new(to) {
+            Ok(vr) => Ok(StringConstraint::new(self.field_name, StrConstr::Equals(vr), self.default)),
+            Err(err) => Err(ParseErr::new(self.path, err)),
+        }
+    }
+
+    fn neq(&self, to: &'a Value) -> Result<StringConstraint<'a>, ParseErr<'a>> {
+        match ValueRef::new(to) {
+            Ok(vr) => Ok(StringConstraint::new(self.field_name, StrConstr::NotEquals(vr), self.default)),
+            Err(err) => Err(ParseErr::new(self.path, err)),
+        }
+    }
 }
 
 impl<'a> ValueRef<'a, String> {
-    fn new(value: &'a Value, path: &[&'a Value]) -> Result<ValueRef<'a, String>, ParseErr<'a>> {
+    fn new(value: &'a Value) -> Result<ValueRef<'a, String>, PEType<'a>> {
         match value {
             Value::String(literal) => Ok(ValueRef::Literal(literal)),
-            Value::Sequence(abs_path) => {
-                match ValueRef::abs_path(abs_path) {
-                    Ok(value_ref) => Ok(value_ref),
-                    Err(err) => Err(ParseErr::new(path, err))
-                }
-            },     
-            _ => Err(ParseErr::new(path, PEType::IncorrectType(value)))       
+            Value::Sequence(abs_path) => ValueRef::abs_path(abs_path),    
+            _ => Err(PEType::IncorrectType(value))       
         }
     }
 }

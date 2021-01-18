@@ -1,0 +1,9 @@
+foo:
+  type: string
+  eq: [fizz, buzz, whiz, bang]
+bar:
+  type: string
+  eq: [foo]
+too_short:
+  type:
+  eq: [fizz, buzz]
