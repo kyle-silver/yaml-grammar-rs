@@ -75,10 +75,10 @@ impl<'a> StringRule<'a> {
                     RuleEvalResult::suc(re.is_match(x), path)
                 }
                 StrRule::Equals(other) => {
-                    RuleEvalResult::suc(&x == other, path)
+                    RuleEvalResult::suc(x == *other, path)
                 }
                 StrRule::NotEquals(other) => {
-                    RuleEvalResult::suc(&x != other, path)
+                    RuleEvalResult::suc(x != *other, path)
                 }
                 StrRule::Any => {
                     RuleEvalResult::suc(true, path)
