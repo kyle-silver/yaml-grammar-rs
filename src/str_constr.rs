@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
 
-use crate::{grammar::{PEType, ParseErr}, value_ref::ValueRef};
+use crate::{grammar::{PEType, ParseErr}, str_rule::{StrRule, StringRule}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 #[derive(Debug)]
@@ -17,9 +17,9 @@ pub enum StrConstr<'a> {
 
 #[derive(Debug)]
 pub struct StringConstraint<'a> {
-    field_name: &'a Value,
+    pub field_name: &'a Value,
     pub constr: StrConstr<'a>,
-    default: Option<&'a String>
+    pub default: Option<&'a String>
 }
 
 impl<'a> StringConstraint<'a> {
