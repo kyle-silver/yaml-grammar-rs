@@ -180,3 +180,45 @@ impl<'a> ValueRef<'a, String> {
 pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) -> Result<StringConstraint<'a>, ParseErr<'a>> {
     StrConstrBuilder::new(field_name, map, path)?.from_mapping()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lit;
+    use crate::valslice;
+    
+    #[test]
+    fn str_eq_valid() {
+        let raw = concat!(
+            "type: string\n",
+            "eq: hello",
+        );
+        let map: Mapping = serde_yaml::from_str(raw).unwrap();
+        let name = valstr!(String::from("f"));
+        let acutal = build(&name, &map, &vec![]);
+        if let Ok(string_constraint) = acutal {
+            assert_eq!(string_constraint.field_name, &valslice!("f"));
+            assert_eq!(string_constraint.constr, StrConstr::Equals(lit!("hello")));
+            assert_eq!(string_constraint.default, None);
+        } else {
+            panic!("didn't parse valid input")
+        }
+    }
+    
+    #[test]
+    fn str_eq_invalid() {
+        let raw = concat!(
+            "type: string\n",
+            "eq: 7",
+        );
+        let map: Mapping = serde_yaml::from_str(raw).unwrap();
+        let name = valstr!(String::from("f"));
+        let acutal = build(&name, &map, &vec![]);
+        if let Err(pe) = acutal {
+            assert!(matches!(pe.err, PEType::IncorrectType(Value::Number(_))));
+            assert_eq!(pe.path, Vec::<&Value>::new());
+        } else {
+            panic!()
+        }
+    }
+}

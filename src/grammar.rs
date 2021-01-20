@@ -9,6 +9,14 @@ macro_rules! valstr {
     };
 }
 
+#[macro_export]
+macro_rules! valslice {
+    ($val:expr) => {
+        Value::String(String::from($val))
+    };
+}
+
+
 #[derive(Debug, PartialEq)]
 pub enum PEType<'a> {
     Unsupported,

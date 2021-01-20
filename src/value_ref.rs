@@ -2,6 +2,12 @@ use serde_yaml::{Mapping, Number, Sequence, Value};
 
 use crate::grammar::PEType;
 
+#[macro_export]
+macro_rules! lit {
+    ($val:expr) => {
+        ValueRef::Literal(&String::from($val))
+    };
+}
 #[derive(Debug, PartialEq, Eq)]
 pub enum ValueResolutionErr<'a> {
     TooShort,
