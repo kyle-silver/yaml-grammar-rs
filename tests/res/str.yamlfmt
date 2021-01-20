@@ -30,4 +30,3 @@ language_not_named_rust:
 password:
   type: string
   neq: [username]
-numfield: number

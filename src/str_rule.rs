@@ -1,13 +1,12 @@
-use regex::Regex;
 use serde_yaml::Value;
 
-use crate::{rule::{RuleErrType, RuleEvalErr, RuleEvalResult}, str_constr::{StrConstr, StringConstraint}, value_ref::ValueResolutionErr};
+use crate::{rule::{RuleErrType, RuleEvalErr, RuleEvalResult}, str_constr::{StrConstr, StringConstraint, WrappedRegex}, value_ref::ValueResolutionErr};
 
 #[derive(Debug)]
 pub enum StrRule<'a> {
     Allowed(Vec<&'a String>),
     Disallowed(Vec<&'a String>),
-    Regex(&'a Box<Regex>),
+    Regex(&'a Box<WrappedRegex>),
     Equals(&'a String),
     NotEquals(&'a String),
     Any,

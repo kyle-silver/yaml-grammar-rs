@@ -2,7 +2,7 @@ use serde_yaml::{Mapping, Number, Sequence, Value};
 
 use crate::grammar::PEType;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ValueResolutionErr<'a> {
     TooShort,
     TooLong,
@@ -11,7 +11,7 @@ pub enum ValueResolutionErr<'a> {
     IncorrectType(&'a Value),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ValueRef<'a, T> {
     Literal(&'a T),
     AbsolutePath(Vec<&'a Value>)

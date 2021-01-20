@@ -1,15 +1,38 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
+use std::ops::Deref;
 
-use crate::{grammar::{PEType, ParseErr}, str_rule::{StrRule, StringRule}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{grammar::{PEType, ParseErr}, value_ref::ValueRef};
 use crate::valstr;
 
+// A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
+// most of the time you would never want to use a regex as a key -- but really we
+// just want this for test coverage
 #[derive(Debug)]
+pub struct WrappedRegex(Regex);
+
+impl Deref for WrappedRegex {
+    type Target = Regex;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialEq for WrappedRegex {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.as_str() == other.as_str()
+    }
+}
+
+impl Eq for WrappedRegex {}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum StrConstr<'a> {
     Allowed(Vec<ValueRef<'a, String>>),
     Disallowed(Vec<ValueRef<'a, String>>),
-    Regex(Box<Regex>),
+    Regex(Box<WrappedRegex>),
     Equals(ValueRef<'a, String>),
     NotEquals(ValueRef<'a, String>),
     Any,
@@ -32,6 +55,7 @@ impl<'a> StringConstraint<'a> {
     }
 }
 
+#[derive(Debug)]
 struct StrConstrBuilder<'a, 'b> {
     field_name: &'a Value,
     map: &'a Mapping,
@@ -94,7 +118,7 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
             match Regex::new(re) {
                 Ok(regex) => Ok(StringConstraint { 
                     field_name: self.field_name,
-                    constr: StrConstr::Regex(Box::new(regex)),
+                    constr: StrConstr::Regex(Box::new(WrappedRegex(regex))),
                     default: self.default,
                 }),
                 Err(e) => Err(ParseErr::new(self.path, PEType::Regex(e)))

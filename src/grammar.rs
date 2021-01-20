@@ -9,7 +9,7 @@ macro_rules! valstr {
     };
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PEType<'a> {
     Unsupported,
     UnknownType(&'a str),
@@ -20,10 +20,10 @@ pub enum PEType<'a> {
     InvalidAbsolutePath(&'a Value),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParseErr<'a> {
-    path: Vec<&'a Value>,
-    err: PEType<'a>,
+    pub path: Vec<&'a Value>,
+    pub err: PEType<'a>,
 }
 
 impl<'a> ParseErr<'a> {
