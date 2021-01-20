@@ -44,7 +44,8 @@ fn str_eq_invalid() {
     let acutal = str_constr::build(&name, &map, &vec![]);
     if let Err(pe) = acutal {
         assert!(matches!(pe.err, PEType::IncorrectType(Value::Number(_))));
-        let expected: Vec<&Value> = vec![];
-        assert_eq!(pe.path, expected);
+        assert_eq!(pe.path, Vec::<&Value>::new());
+    } else {
+        panic!()
     }
 }
