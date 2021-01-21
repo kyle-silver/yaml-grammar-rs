@@ -38,11 +38,11 @@ pub enum StrConstr<'a> {
     Any,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct StringConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: StrConstr<'a>,
-    pub default: Option<&'a String>
+    pub default: Option<&'a String>,
 }
 
 impl<'a> StringConstraint<'a> {
@@ -183,6 +183,8 @@ pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) ->
 
 #[cfg(test)]
 mod tests {
+    use serde_yaml::Number;
+
     use super::*;
     use crate::lit;
     use crate::valslice;
@@ -215,8 +217,10 @@ mod tests {
         let name = valstr!(String::from("f"));
         let acutal = build(&name, &map, &vec![]);
         if let Err(pe) = acutal {
-            assert!(matches!(pe.err, PEType::IncorrectType(Value::Number(_))));
-            assert_eq!(pe.path, Vec::<&Value>::new());
+            assert_eq!(pe, ParseErr {
+                err: PEType::IncorrectType(&Value::Number(Number::from(7))),
+                path: Vec::<&Value>::new(),
+            })
         } else {
             panic!()
         }

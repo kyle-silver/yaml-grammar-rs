@@ -69,7 +69,7 @@ impl<'a> IntoIterator for YamlParseResult<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Constraint<'a> {
     Str(StringConstraint<'a>),
 }
