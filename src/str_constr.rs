@@ -56,17 +56,17 @@ impl<'a> StringConstraint<'a> {
 }
 
 #[derive(Debug)]
-struct StrConstrBuilder<'a, 'b> {
+struct StringConstraintBuilder<'a, 'b> {
     field_name: &'a Value,
-    map: &'a Mapping,
+    config: &'a Mapping,
     path: &'b [&'a Value],
     default: Option<&'a String>
 }
 
-impl<'a, 'b> StrConstrBuilder<'a, 'b> {
-    fn new(field_name: &'a Value, map: &'a Mapping, path: &'b [&'a Value]) -> Result<StrConstrBuilder<'a, 'b>, ParseErr<'a>> {
-        let default = StrConstrBuilder::field_default(map, path)?;
-        Ok(StrConstrBuilder { field_name, map, path, default })
+impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
+    fn new(field_name: &'a Value, config: &'a Mapping, path: &'b [&'a Value]) -> Result<Self, ParseErr<'a>> {
+        let default = Self::field_default(config, path)?;
+        Ok(Self { field_name, config, path, default })
     }
 
     fn field_default(map: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a String>, ParseErr<'a>> {
@@ -92,19 +92,19 @@ impl<'a, 'b> StrConstrBuilder<'a, 'b> {
             static ref NEQ: Value = valstr!(String::from("neq"));
             static ref DEFAULT: Value = valstr!(String::from("default"));
         }
-        if let Some(val) = self.map.get(&REGEX) {
+        if let Some(val) = self.config.get(&REGEX) {
             return self.regex(val);
         }
-        if let Some(val) = self.map.get(&ALLOWED) {
+        if let Some(val) = self.config.get(&ALLOWED) {
             return self.allowed(val);
         }
-        if let Some(val) = self.map.get(&DISALLOWED) {
+        if let Some(val) = self.config.get(&DISALLOWED) {
             return self.disallowed(val);
         }
-        if let Some(val) = self.map.get(&EQ) {
+        if let Some(val) = self.config.get(&EQ) {
             return self.eq(val);
         }
-        if let Some(val) = self.map.get(&NEQ) {
+        if let Some(val) = self.config.get(&NEQ) {
             return self.neq(val);
         }
         if self.default.is_some() {
@@ -171,14 +171,14 @@ impl<'a> ValueRef<'a, String> {
     fn new(value: &'a Value) -> Result<ValueRef<'a, String>, PEType<'a>> {
         match value {
             Value::String(literal) => Ok(ValueRef::Literal(literal)),
-            Value::Sequence(abs_path) => ValueRef::abs_path(abs_path),    
+            Value::Sequence(path) => ValueRef::abs_path(path),    
             _ => Err(PEType::IncorrectType(value))       
         }
     }
 }
 
 pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) -> Result<StringConstraint<'a>, ParseErr<'a>> {
-    StrConstrBuilder::new(field_name, map, path)?.from_mapping()
+    StringConstraintBuilder::new(field_name, map, path)?.from_mapping()
 }
 
 #[cfg(test)]
@@ -196,7 +196,7 @@ mod tests {
             "eq: hello",
         );
         let map: Mapping = serde_yaml::from_str(raw).unwrap();
-        let name = valstr!(String::from("f"));
+        let name = valslice!("f");
         let acutal = build(&name, &map, &vec![]);
         if let Ok(string_constraint) = acutal {
             assert_eq!(string_constraint.field_name, &valslice!("f"));

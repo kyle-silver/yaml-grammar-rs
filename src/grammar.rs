@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
-use crate::str_constr::{self, StringConstraint};
+use crate::{obj_constr::{self, ObjectConstraint}, str_constr::{self, StringConstraint}};
 
 #[macro_export]
 macro_rules! valstr {
@@ -40,6 +40,12 @@ impl<'a> ParseErr<'a> {
     }
 }
 
+impl<'a> From<ParseErr<'a>> for YamlParseResult<'a> {
+    fn from(pe: ParseErr<'a>) -> Self {
+        YamlParseResult::Single(Err(pe))
+    }
+}
+
 #[derive(Debug)]
 pub enum YamlParseResult<'a> {
     Single(Result<Constraint<'a>, ParseErr<'a>>),
@@ -51,8 +57,19 @@ impl<'a> YamlParseResult<'a> {
         YamlParseResult::Single(Err(ParseErr::new(path, err)))
     }
 
-    fn from(res: Result<Constraint<'a>, ParseErr<'a>>) -> YamlParseResult<'a> {
+    fn from_res(res: Result<Constraint<'a>, ParseErr<'a>>) -> YamlParseResult<'a> {
         YamlParseResult::Single(res)
+    }
+
+    pub fn all_ok(&self) -> bool {
+        match self {
+            YamlParseResult::Single(res) => {
+                res.is_ok()
+            }
+            YamlParseResult::Multi(v) => {
+                v.iter().all(Result::is_ok)
+            }
+        }
     }
 }
 
@@ -72,8 +89,14 @@ impl<'a> IntoIterator for YamlParseResult<'a> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Constraint<'a> {
     Str(StringConstraint<'a>),
+    Obj(ObjectConstraint<'a>)
 }
 
+impl<'a> From<Constraint<'a>> for YamlParseResult<'a> {
+    fn from(c: Constraint<'a>) -> Self {
+        YamlParseResult::Single(Ok(c))
+    }
+}
 
 impl<'a> Constraint<'a> {
     pub fn parse(field_name: &'a Value, value: &'a Value, parent_path: &[&'a Value]) -> YamlParseResult<'a> {
@@ -90,8 +113,7 @@ impl<'a> Constraint<'a> {
                 YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::String(field_type) => {
-                let constr = Constraint::for_default(field_name, field_type, &path);
-                YamlParseResult::from(constr)
+                Constraint::for_default(field_name, field_type, &path).into()
             }
             Value::Sequence(_) => {
                 YamlParseResult::err(&path, PEType::Unsupported)
@@ -102,29 +124,36 @@ impl<'a> Constraint<'a> {
         }
     }
 
-    fn for_default(field_name: &'a Value, field_type: &'a str, path: &[&'a Value]) -> Result<Constraint<'a>, ParseErr<'a>> {
-        match field_type {
-            "string" => Ok(Constraint::Str(StringConstraint::default(field_name))),
-            _ => Err(ParseErr::new(path, PEType::UnknownType(field_type)))
+    pub fn field_name(&self) -> &'a Value {
+        match self {
+            Constraint::Str(c) => c.field_name,
+            Constraint::Obj(c) => c.field_name,
         }
     }
 
-    fn for_mapping(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) -> YamlParseResult<'a> {
+    fn for_default(field_name: &'a Value, field_type: &'a str, path: &[&'a Value]) -> YamlParseResult<'a> {
+        match field_type {
+            "string" => Constraint::Str(StringConstraint::default(field_name)).into(),
+            "object" => Constraint::Obj(ObjectConstraint::default(field_name)).into(),
+            _ => ParseErr::new(path, PEType::UnknownType(field_type)).into(),
+        }
+    }
+
+    fn for_mapping(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value]) -> YamlParseResult<'a> {
         lazy_static! {
             static ref TYPE: Value = valstr!(String::from("type"));
         }
-        if let Some(Value::String(field_type)) = map.get(&TYPE) {
+        if let Some(Value::String(field_type)) = config.get(&TYPE) {
             match field_type.as_str() {
-                "string" => {
-                    match str_constr::build(field_name, map, path) {
-                        Ok(constr) => YamlParseResult::from(Ok(Constraint::Str(constr))),
-                        Err(e) => YamlParseResult::from(Err(e))
-                    }
-                }
-                _ => YamlParseResult::err(path, PEType::UnknownType(field_type)),
+                "string" => match str_constr::build(field_name, config, path) {
+                    Ok(constr) => Constraint::Str(constr).into(),
+                    Err(e) => e.into()
+                },
+                "object" => obj_constr::build(field_name, config, path),
+                _ => ParseErr::new(path, PEType::UnknownType(field_type)).into(),
             }
         } else {
-            YamlParseResult::err(path, PEType::InvalidTypeInfo(field_name))
+            ParseErr::new(path, PEType::InvalidTypeInfo(field_name)).into()
         }
     }
 }
