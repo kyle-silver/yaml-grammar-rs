@@ -71,7 +71,7 @@ impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
 
     fn field_default(map: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a String>, ParseErr<'a>> {
         lazy_static! {
-            static ref DEFAULT: Value = valstr!(String::from("default"));
+            static ref DEFAULT: Value = valstr!("default");
         }
         if let Some(val) = map.get(&DEFAULT) {
             match val {
@@ -85,12 +85,12 @@ impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
 
     fn from_mapping(&self) -> Result<StringConstraint<'a>, ParseErr<'a>> {
         lazy_static! {
-            static ref ALLOWED: Value = valstr!(String::from("allowed"));
-            static ref DISALLOWED: Value = valstr!(String::from("disallowed"));
-            static ref REGEX: Value = valstr!(String::from("regex"));
-            static ref EQ: Value = valstr!(String::from("eq"));
-            static ref NEQ: Value = valstr!(String::from("neq"));
-            static ref DEFAULT: Value = valstr!(String::from("default"));
+            static ref ALLOWED: Value = valstr!("allowed");
+            static ref DISALLOWED: Value = valstr!("disallowed");
+            static ref REGEX: Value = valstr!("regex");
+            static ref EQ: Value = valstr!("eq");
+            static ref NEQ: Value = valstr!("neq");
+            static ref DEFAULT: Value = valstr!("default");
         }
         if let Some(val) = self.config.get(&REGEX) {
             return self.regex(val);
@@ -187,7 +187,7 @@ mod tests {
 
     use super::*;
     use crate::lit;
-    use crate::valslice;
+    use crate::valstr;
     
     #[test]
     fn str_eq_valid() {
@@ -196,10 +196,10 @@ mod tests {
             "eq: hello",
         );
         let map: Mapping = serde_yaml::from_str(raw).unwrap();
-        let name = valslice!("f");
+        let name = valstr!("f");
         let acutal = build(&name, &map, &vec![]);
         if let Ok(string_constraint) = acutal {
-            assert_eq!(string_constraint.field_name, &valslice!("f"));
+            assert_eq!(string_constraint.field_name, &valstr!("f"));
             assert_eq!(string_constraint.constr, StrConstr::Equals(lit!("hello")));
             assert_eq!(string_constraint.default, None);
         } else {
@@ -214,7 +214,7 @@ mod tests {
             "eq: 7",
         );
         let map: Mapping = serde_yaml::from_str(raw).unwrap();
-        let name = valstr!(String::from("f"));
+        let name = valstr!("f");
         let acutal = build(&name, &map, &vec![]);
         if let Err(pe) = acutal {
             assert_eq!(pe, ParseErr {

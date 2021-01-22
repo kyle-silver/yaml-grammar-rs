@@ -5,13 +5,6 @@ use crate::{obj_constr::{self, ObjectConstraint}, str_constr::{self, StringConst
 #[macro_export]
 macro_rules! valstr {
     ($val:expr) => {
-        Value::String($val)
-    };
-}
-
-#[macro_export]
-macro_rules! valslice {
-    ($val:expr) => {
         Value::String(String::from($val))
     };
 }
@@ -141,7 +134,7 @@ impl<'a> Constraint<'a> {
 
     fn for_mapping(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value]) -> YamlParseResult<'a> {
         lazy_static! {
-            static ref TYPE: Value = valstr!(String::from("type"));
+            static ref TYPE: Value = valstr!("type");
         }
         if let Some(Value::String(field_type)) = config.get(&TYPE) {
             match field_type.as_str() {

@@ -52,7 +52,7 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
 
     fn field_default(config: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a Mapping>, ParseErr<'a>> {
         lazy_static! {
-            static ref DEFAULT: Value = valstr!(String::from("default"));
+            static ref DEFAULT: Value = valstr!("default");
         }
         if let Some(val) = config.get(&DEFAULT) {
             match val {
@@ -66,7 +66,7 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
 
     fn from_mapping(&self) -> YamlParseResult<'a> {
         lazy_static! {
-            static ref FIELDS: Value = valstr!(String::from("fields"));
+            static ref FIELDS: Value = valstr!("fields");
         }
         if let Some(val) = self.config.get(&FIELDS) {
             return self.fields(val);
@@ -121,7 +121,7 @@ pub fn build<'a>(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value])
 mod tests {
     use super::*;
     use crate::lit;
-    use crate::valslice;
+    use crate::valstr;
 
     #[test]
     fn obj_constr_valid() {
@@ -136,7 +136,7 @@ mod tests {
             "      foobar: string"
         );
         let config: Mapping = serde_yaml::from_str(raw).unwrap();
-        let name = valslice!("f");
+        let name = valstr!("f");
         println!("{:?}", build(&name, &config, &vec![]));
         // TODO assert some stuff
     }

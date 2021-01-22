@@ -1,6 +1,6 @@
 use serde_yaml::Value;
 
-use crate::{rule::{RuleErrType, RuleEvalErr, RuleEvalResult}, str_constr::{StrConstr, StringConstraint, WrappedRegex}, value_ref::ValueResolutionErr};
+use crate::{rule::{RuleErrType, RuleEvalResult}, str_constr::{StrConstr, StringConstraint, WrappedRegex}, value_ref::ValueResolutionErr};
 
 #[derive(Debug)]
 pub enum StrRule<'a> {
