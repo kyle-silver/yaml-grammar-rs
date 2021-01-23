@@ -1,5 +1,5 @@
 [package]
-name = "yaml-grammar-rs"
+name = "yaml-grammar"
 version = "0.1.0"
 authors = ["Kyle Silver"]
 edition = "2018"

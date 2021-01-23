@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
-use crate::{obj_constr::{self, ObjectConstraint}, str_constr::{self, StringConstraint}};
+use crate::{obj::{self, ObjectConstraint}, str::{self, StringConstraint}};
 
 #[macro_export]
 macro_rules! valstr {
@@ -138,11 +138,11 @@ impl<'a> Constraint<'a> {
         }
         if let Some(Value::String(field_type)) = config.get(&TYPE) {
             match field_type.as_str() {
-                "string" => match str_constr::build(field_name, config, path) {
+                "string" => match str::build(field_name, config, path) {
                     Ok(constr) => Constraint::Str(constr).into(),
                     Err(e) => e.into()
                 },
-                "object" => obj_constr::build(field_name, config, path),
+                "object" => obj::build(field_name, config, path),
                 _ => ParseErr::new(path, PEType::UnknownType(field_type)).into(),
             }
         } else {
