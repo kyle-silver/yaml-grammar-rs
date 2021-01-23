@@ -70,6 +70,12 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
         }
     }
 
+    fn path(&self) -> Vec<&'a Value> {
+        let mut path = self.path.to_vec();
+        path.push(self.field_name);
+        path
+    }
+
     fn from_mapping(&self) -> YamlParseResult<'a> {
         lazy_static! {
             static ref FIELDS: Value = valstr!("fields");
@@ -101,7 +107,7 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
                 YamlParseResult::Multi(err.into_iter().flatten().collect())
             }
         } else {
-            ParseErr::new(self.path, PEType::IncorrectType(fields)).into()
+            ParseErr::new(&self.path(), PEType::IncorrectType(fields)).into()
         }
     }
 }
@@ -168,7 +174,48 @@ mod tests {
             assert_eq!(expected, obj);
             assert_eq!(None, obj.default);
         } else {
-            panic!();
+            panic!("parse of valid input failed");
         }
+    }
+
+    #[test]
+    fn obj_constr_invalid() {
+        let raw = concat!(
+            "type: object\n",
+            "fields:\n",
+            "  hello: stringerino\n",
+            "  world: string\n",
+        );
+
+        let config: Mapping = serde_yaml::from_str(raw).unwrap();
+        let name = valstr!("parent");
+        let results = build(&name, &config, &vec![]).get();
+        assert_eq!(results.len(), 1);
+
+        let pe = results.into_iter().next()
+            .expect("expected one error")
+            .expect_err("First entry should be an error");
+        let (p1, p2) = (valstr!("parent"), valstr!("hello"));
+        let expected = ParseErr::new(&vec![&p1, &p2], PEType::UnknownType("stringerino"));
+        assert_eq!(expected, pe);
+    }
+
+    #[test]
+    fn obj_empty_fields() {
+        let raw = concat!(
+            "type: object\n",
+            "fields:\n",
+        );
+        
+        let config: Mapping = serde_yaml::from_str(raw).unwrap();
+        let name = valstr!("parent");
+        let results = build(&name, &config, &vec![]).get();
+        assert_eq!(results.len(), 1);
+
+        let pe = results.into_iter().next()
+            .expect("expected one error")
+            .expect_err("First entry should be an error");
+        let expected = ParseErr::new(&vec![&name], PEType::IncorrectType(&Value::Null));
+        assert_eq!(expected, pe);
     }
 }

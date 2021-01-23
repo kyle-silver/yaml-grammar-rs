@@ -50,8 +50,8 @@ impl<'a> YamlParseResult<'a> {
         YamlParseResult::Single(Err(ParseErr::new(path, err)))
     }
 
-    fn from_res(res: Result<Constraint<'a>, ParseErr<'a>>) -> YamlParseResult<'a> {
-        YamlParseResult::Single(res)
+    pub fn get(self) -> Vec<Result<Constraint<'a>, ParseErr<'a>>> {
+        self.into_iter().collect()
     }
 
     pub fn all_ok(&self) -> bool {
@@ -106,7 +106,7 @@ impl<'a> Constraint<'a> {
                 YamlParseResult::err(&path, PEType::Unsupported)
             },
             Value::String(field_type) => {
-                Constraint::for_default(field_name, field_type, &path).into()
+                Constraint::for_default(field_name, field_type, &path)
             }
             Value::Sequence(_) => {
                 YamlParseResult::err(&path, PEType::Unsupported)

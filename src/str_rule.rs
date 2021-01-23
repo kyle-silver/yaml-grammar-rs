@@ -6,7 +6,7 @@ use crate::{rule::{RuleErrType, RuleEvalResult}, str_constr::{StrConstr, StringC
 pub enum StrRule<'a> {
     Allowed(Vec<&'a String>),
     Disallowed(Vec<&'a String>),
-    Regex(&'a Box<WrappedRegex>),
+    Regex(&'a WrappedRegex),
     Equals(&'a String),
     NotEquals(&'a String),
     Any,
