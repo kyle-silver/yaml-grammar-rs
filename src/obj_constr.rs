@@ -28,6 +28,12 @@ impl<'a> ObjectConstraint<'a> {
     fn new(field_name: &'a Value, constr: ObjConstr<'a>, default: Option<&'a Mapping>) -> ObjectConstraint<'a> {
         ObjectConstraint { field_name, constr, default }
     }
+
+    pub fn add(&mut self, field_name: &'a Value, constraint: Constraint<'a>) {
+        if let ObjConstr::Fields(map) = &mut self.constr {
+            map.insert(&field_name, constraint);
+        }
+    }
 }
 
 impl<'a> From<ObjectConstraint<'a>> for YamlParseResult<'a> {
@@ -120,11 +126,12 @@ pub fn build<'a>(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value])
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lit;
+    use crate::{lit, str_constr::StringConstraint};
     use crate::valstr;
 
     #[test]
     fn obj_constr_valid() {
+        // yaml
         let raw = concat!(
             "type: object\n",
             "fields:\n",
@@ -135,9 +142,33 @@ mod tests {
             "    fields:\n",
             "      foobar: string"
         );
+
+        // expected structure in code
+        // inner object constraint
+        let name = valstr!("nested");
+        let mut nested = ObjectConstraint::new(&name, ObjConstr::Fields(HashMap::new()), None);
+        let name = valstr!("foobar");
+        nested.add(&name, Constraint::Str(StringConstraint::default(&name)));
+        // outer object constraint
+        let name = valstr!("f");
+        let mut expected = ObjectConstraint::new(&name, ObjConstr::Fields(HashMap::new()), None);
+        let name = valstr!("nested");
+        expected.add(&name, Constraint::Obj(nested));
+        let name = valstr!("hello");
+        expected.add(&name, Constraint::Str(StringConstraint::default(&name)));
+        let name = valstr!("world");
+        expected.add(&name, Constraint::Str(StringConstraint::default(&name)));
+
+        // parse yaml and validate
         let config: Mapping = serde_yaml::from_str(raw).unwrap();
         let name = valstr!("f");
-        println!("{:?}", build(&name, &config, &vec![]));
-        // TODO assert some stuff
+        let res = build(&name, &config, &vec![]);
+        if let YamlParseResult::Single(Ok(Constraint::Obj(obj))) = res {
+            assert_eq!(&String::from("f"), obj.field_name);
+            assert_eq!(expected, obj);
+            assert_eq!(None, obj.default);
+        } else {
+            panic!();
+        }
     }
 }
