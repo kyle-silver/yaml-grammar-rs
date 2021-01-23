@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use crate::{obj::{self, ObjectConstraint}, str::{self, StringConstraint}};
 
@@ -30,6 +31,12 @@ pub struct ParseErr<'a> {
 impl<'a> ParseErr<'a> {
     pub fn new(path: &[&'a Value], err: PEType<'a>) -> ParseErr<'a> {
         ParseErr { path: path.to_vec(), err }
+    }
+}
+
+impl From<regex::Error> for PEType<'_> {
+    fn from(re_err: regex::Error) -> Self {
+        PEType::Regex(re_err)
     }
 }
 
