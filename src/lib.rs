@@ -5,3 +5,4 @@ pub mod str;
 pub mod obj;
 pub mod rule;
 pub mod value_ref;
+pub mod bubble;

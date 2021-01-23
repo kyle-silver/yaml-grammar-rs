@@ -1,7 +1,8 @@
 use lazy_static::lazy_static;
+use obj::ObjectRule;
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
-use crate::{obj::{self, ObjectConstraint}, str::{self, StringConstraint}};
+use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, str::{self, StringConstraint, StringRule}, value_ref::ValueResolutionErr};
 
 #[macro_export]
 macro_rules! valstr {
@@ -154,6 +155,35 @@ impl<'a> Constraint<'a> {
             }
         } else {
             ParseErr::new(path, PEType::InvalidTypeInfo(field_name)).into()
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Rule<'a> {
+    Str(StringRule<'a>),
+    Obj(ObjectRule<'a>),
+}
+
+pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
+
+impl<'a> Rule<'a> {
+    pub fn new(constraint: &'a Constraint, root: &'a Value) -> ValueResolutionResult<'a> {
+        match constraint {
+            Constraint::Str(sc) => {
+                match StringRule::new(sc, root) {
+                    Ok(sr) => Bubble::Single(Ok(sr.into())),
+                    Err(e) => Bubble::Single(Err(e))
+                }
+            }
+            Constraint::Obj(_) => todo!(),
+        }
+    }
+
+    pub fn field_name(&self) -> &'a Value {
+        match self {
+            Rule::Str(sr) => sr.field_name,
+            Rule::Obj(or) => or.field_name,
         }
     }
 }

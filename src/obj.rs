@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use grammar::YamlParseResult;
+use grammar::{Rule, ValueResolutionResult, YamlParseResult};
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{grammar::{self, Constraint, PEType, ParseErr}, value_ref::ValueRef};
+use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -126,6 +126,46 @@ pub fn build<'a>(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value])
     match ObjectConstraintBuilder::new(field_name, config, path) {
         Ok(builder) => builder.from_mapping(),
         Err(e) => e.into()
+    }
+}
+
+#[derive(Debug)]
+pub enum ObjRule<'a> {
+    Fields(HashMap<&'a Value, Rule<'a>>),
+    Any,
+}
+
+#[derive(Debug)]
+pub struct ObjectRule<'a> {
+    pub field_name: &'a Value,
+    rule: ObjRule<'a>,
+}
+
+impl<'a> ObjectRule<'a> {
+    pub fn new(constraint: &'a ObjectConstraint, root: &'a Value) -> ValueResolutionResult<'a> {
+        match &constraint.constr {
+            ObjConstr::Fields(constraints) => {
+                let (ok, err): (Vec<_>, Vec<_>) = constraints.into_iter()
+                    .map(|(_, c)| Rule::new(c, root))
+                    .partition(|b| b.all(Result::is_ok));
+                if err.is_empty() {
+                    let map = ok.into_iter()
+                        .flatten()
+                        .map(Result::unwrap)
+                        .map(|r| (r.field_name(), r))
+                        .collect();
+                    let rule = ObjRule::Fields(map);
+                    let object_rule = ObjectRule { field_name: constraint.field_name, rule, };
+                    Bubble::Single(Ok(Rule::Obj(object_rule)))
+                } else {
+                    Bubble::Multi(err.into_iter().flatten().collect())
+                }
+            }
+            ObjConstr::Any => {
+                let object_rule = ObjectRule { field_name: constraint.field_name, rule: ObjRule::Any, };
+                Bubble::Single(Ok(Rule::Obj(object_rule)))
+            },
+        }
     }
 }
 

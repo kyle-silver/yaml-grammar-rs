@@ -3,7 +3,7 @@ use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use std::ops::Deref;
 
-use crate::{grammar::{PEType, ParseErr}, rule::{RuleErrType, RuleEvalResult}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{grammar::{PEType, ParseErr, Rule}, rule::{RuleErrType, RuleEvalResult}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 // A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
@@ -222,8 +222,14 @@ impl<'a> StrRule<'a> {
 
 #[derive(Debug)]
 pub struct StringRule<'a> {
-    field_name: &'a Value,
+    pub field_name: &'a Value,
     rule: StrRule<'a>,
+}
+
+impl<'a> From<StringRule<'a>> for Rule<'a> {
+    fn from(sr: StringRule<'a>) -> Self {
+        Rule::Str(sr)
+    }
 }
 
 impl<'a> StringRule<'a> {

@@ -15,6 +15,7 @@ pub enum ValueResolutionErr<'a> {
     NotFound,
     NonTerminalType(&'a Value),
     IncorrectType(&'a Value),
+    Unimplemented,
 }
 
 #[derive(Debug, PartialEq, Eq)]
