@@ -285,4 +285,41 @@ mod tests {
         let expected = ParseErr::new(&vec![&name], PEType::IncorrectType(&Value::Null));
         assert_eq!(expected, pe);
     }
+
+    #[test]
+    fn resolution_test() {
+        let spec = concat!(
+            "type: object\n",
+            "fields:\n",
+            "  hello:\n",
+            "    type: string\n",
+            "    eq: [parent, world]\n",
+            "  world: string\n",
+            "  nested:\n",
+            "    type: object\n",
+            "    fields:\n",
+            "      foobar: string\n"
+        );
+
+        let input = concat!(
+            "parent:\n",
+            "  hello: foo\n",
+            "  world: bar\n",
+            "  nested:\n",
+            "    foobar: fizzbuzz\n"
+        );
+
+        let config: Mapping = serde_yaml::from_str(spec).unwrap();
+        let name = valstr!("parent");
+        let constraints: Vec<Constraint> = build(&name, &config, &vec![]).get().into_iter()
+            .map(Result::unwrap)
+            .collect();
+
+        let input: Value = serde_yaml::from_str(input).unwrap();
+        println!("{:?}", input);
+        for constraint in constraints {
+            println!("{:?}", Rule::new(&constraint, &input));
+        }
+        
+    }
 }

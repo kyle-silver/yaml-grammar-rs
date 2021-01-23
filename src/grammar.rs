@@ -176,7 +176,7 @@ impl<'a> Rule<'a> {
                     Err(e) => Bubble::Single(Err(e))
                 }
             }
-            Constraint::Obj(_) => todo!(),
+            Constraint::Obj(oc) => ObjectRule::new(oc, root),
         }
     }
 

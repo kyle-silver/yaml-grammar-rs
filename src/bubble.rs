@@ -1,5 +1,6 @@
 use std::vec;
 
+#[derive(Debug)]
 pub enum Bubble<T> {
     Single(T),
     Multi(Vec<T>),
