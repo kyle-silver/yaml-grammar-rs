@@ -93,7 +93,7 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
             path.push(self.field_name);
             let (ok, err): (Vec<_>, Vec<_>) = f.iter()
                 .map(|(k, v)| Constraint::parse(k, v, &path))
-                .partition(YamlParseResult::all_ok);
+                .partition(|b| b.all(Result::is_ok));
             // see if it was parsed without errors
             if err.is_empty() {
                 let map = ok.into_iter()

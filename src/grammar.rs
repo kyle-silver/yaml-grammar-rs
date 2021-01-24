@@ -1,7 +1,6 @@
 use lazy_static::lazy_static;
-use obj::ObjectRule;
 use serde_yaml::{Mapping, Value};
-use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, rule::RuleEvalResult, str::{self, StringConstraint, StringRule}, value_ref::ValueResolutionErr};
+use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, str::{self, StringConstraint}};
 
 #[macro_export]
 macro_rules! valstr {
@@ -46,45 +45,47 @@ impl<'a> From<ParseErr<'a>> for YamlParseResult<'a> {
     }
 }
 
-#[derive(Debug)]
-pub enum YamlParseResult<'a> {
-    Single(Result<Constraint<'a>, ParseErr<'a>>),
-    Multi(Vec<Result<Constraint<'a>, ParseErr<'a>>>)
-}
+pub type YamlParseResult<'a> = Bubble<Result<Constraint<'a>, ParseErr<'a>>>;
 
-impl<'a> YamlParseResult<'a> {
-    fn err(path: &[&'a Value], err: PEType<'a>) -> YamlParseResult<'a> {
-        YamlParseResult::Single(Err(ParseErr::new(path, err)))
-    }
+// #[derive(Debug)]
+// pub enum YamlParseResult<'a> {
+//     Single(Result<Constraint<'a>, ParseErr<'a>>),
+//     Multi(Vec<Result<Constraint<'a>, ParseErr<'a>>>)
+// }
 
-    pub fn get(self) -> Vec<Result<Constraint<'a>, ParseErr<'a>>> {
-        self.into_iter().collect()
-    }
+// impl<'a> YamlParseResult<'a> {
+//     fn err(path: &[&'a Value], err: PEType<'a>) -> YamlParseResult<'a> {
+//         YamlParseResult::Single(Err(ParseErr::new(path, err)))
+//     }
 
-    pub fn all_ok(&self) -> bool {
-        match self {
-            YamlParseResult::Single(res) => {
-                res.is_ok()
-            }
-            YamlParseResult::Multi(v) => {
-                v.iter().all(Result::is_ok)
-            }
-        }
-    }
-}
+//     pub fn get(self) -> Vec<Result<Constraint<'a>, ParseErr<'a>>> {
+//         self.into_iter().collect()
+//     }
 
-impl<'a> IntoIterator for YamlParseResult<'a> {
-    type Item = Result<Constraint<'a>, ParseErr<'a>>;
+//     pub fn all_ok(&self) -> bool {
+//         match self {
+//             YamlParseResult::Single(res) => {
+//                 res.is_ok()
+//             }
+//             YamlParseResult::Multi(v) => {
+//                 v.iter().all(Result::is_ok)
+//             }
+//         }
+//     }
+// }
 
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+// impl<'a> IntoIterator for YamlParseResult<'a> {
+//     type Item = Result<Constraint<'a>, ParseErr<'a>>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        match self {
-            YamlParseResult::Single(res) => vec![res].into_iter(),
-            YamlParseResult::Multi(v) => v.into_iter()
-        }
-    }
-}
+//     type IntoIter = std::vec::IntoIter<Self::Item>;
+
+//     fn into_iter(self) -> Self::IntoIter {
+//         match self {
+//             YamlParseResult::Single(res) => vec![res].into_iter(),
+//             YamlParseResult::Multi(v) => v.into_iter()
+//         }
+//     }
+// }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Constraint<'a> {
@@ -104,19 +105,19 @@ impl<'a> Constraint<'a> {
         path.push(field_name);
         match value {
             Value::Null => {
-                YamlParseResult::err(&path, PEType::Unsupported)
+                ParseErr::new(&path, PEType::Unsupported).into()
             },
             Value::Bool(_) => {
-                YamlParseResult::err(&path, PEType::Unsupported)
+                ParseErr::new(&path, PEType::Unsupported).into()
             },
             Value::Number(_) => {
-                YamlParseResult::err(&path, PEType::Unsupported)
+                ParseErr::new(&path, PEType::Unsupported).into()
             },
             Value::String(field_type) => {
                 Constraint::for_default(field_name, field_type, &path)
             }
             Value::Sequence(_) => {
-                YamlParseResult::err(&path, PEType::Unsupported)
+                ParseErr::new(&path, PEType::Unsupported).into()
             },
             Value::Mapping(m) => {
                 Constraint::for_mapping(field_name, m, &path)
