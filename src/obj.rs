@@ -4,7 +4,7 @@ use grammar::{Rule, ValueResolutionResult, YamlParseResult};
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::ValueRef};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -108,16 +108,6 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
             }
         } else {
             ParseErr::new(&self.path(), PEType::IncorrectType(fields)).into()
-        }
-    }
-}
-
-impl<'a> ValueRef<'a, Mapping> {
-    fn new(value: &'a Value) -> Result<ValueRef<'a, Mapping>, PEType<'a>> {
-        match value {
-            Value::Mapping(literal) => Ok(ValueRef::Literal(literal)),
-            Value::Sequence(path) => ValueRef::abs_path(path),
-            _ => Err(PEType::IncorrectType(value)),
         }
     }
 }
