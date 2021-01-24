@@ -6,3 +6,4 @@ pub mod obj;
 pub mod rule;
 pub mod value_ref;
 pub mod bubble;
+pub mod constraint;

@@ -1,6 +1,6 @@
 use serde_yaml::Value;
 
-use crate::{bubble::Bubble, grammar::Constraint, obj::ObjectRule, str::StringRule, value_ref::ValueResolutionErr};
+use crate::{bubble::Bubble, constraint::Constraint, obj::ObjectRule, str::StringRule, value_ref::ValueResolutionErr};
 
 pub type RuleEvalResult<'a> = Bubble<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>>;
 
