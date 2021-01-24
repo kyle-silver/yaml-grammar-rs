@@ -170,17 +170,18 @@ impl<'a> ObjectRule<'a> {
     }
 
     pub fn eval(&'a self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
+        // this doesn't work for the very top level of rules
+        // that evaluation is treated as a special case and done in a separate loop
         if let Value::Mapping(mapping) = value {
-            // todo!("implement after getting some coffee")
             match &self.rule {
                 ObjRule::Fields(rules) => {
                     let (ok, err): (Vec<_>, Vec<_>) = rules.into_iter()
                         .map(|(key, rule)| ObjectRule::subrule(key, rule, mapping, path))
                         .partition(|b| b.all(Result::is_ok));
                     if err.is_empty() {
-                        Bubble::Multi(ok.into_iter().flatten().collect())
+                        ok.into()
                     } else {
-                        Bubble::Multi(err.into_iter().flatten().collect())
+                        err.into()
                     }
                 }
                 ObjRule::Any => {
@@ -193,10 +194,12 @@ impl<'a> ObjectRule<'a> {
     }
 
     fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
+        let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
+        println!("Key: {:?}, Mapping: {:?}", key, keys);
         if let Some(value) = input.get(key) {
             rule.eval(value, path)
         } else {
-            RuleEvalErr::new(path, RuleErrType::IncorrectType(key)).into()
+            RuleEvalErr::new(path, RuleErrType::KeyNotFound(key)).into()
         }
     }
 }
@@ -350,8 +353,15 @@ mod tests {
         let input: Value = serde_yaml::from_str(input).unwrap();
         println!("{:?}", input);
         for constraint in constraints {
-            println!("{:?}", Rule::new(&constraint, &input));
+            let results = Rule::new(&constraint, &input);
+            println!("results: {:?}", results);
+            for res in results.get() {
+                if let Ok(rule) = res {
+                    println!("{:?}", rule.eval(&input.get(valstr!("parent")).unwrap(), &vec![]));
+                }
+            }
         } 
+        
         
     }
 }

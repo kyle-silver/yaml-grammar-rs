@@ -7,6 +7,7 @@ pub type RuleEvalResult<'a> = Bubble<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>
 #[derive(Debug)]
 pub enum RuleErrType<'a> {
     MissingRequired,
+    KeyNotFound(&'a Value),
     IncorrectType(&'a Value),
     Resolution(ValueResolutionErr<'a>),
 }
