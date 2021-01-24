@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use grammar::{Rule, ValueResolutionResult, YamlParseResult};
+use grammar::YamlParseResult;
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::ValueRef};
+use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}, value_ref::ValueRef};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]

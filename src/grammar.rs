@@ -158,40 +158,40 @@ impl<'a> Constraint<'a> {
     }
 }
 
-#[derive(Debug)]
-pub enum Rule<'a> {
-    Str(StringRule<'a>),
-    Obj(ObjectRule<'a>),
-}
+// #[derive(Debug)]
+// pub enum Rule<'a> {
+//     Str(StringRule<'a>),
+//     Obj(ObjectRule<'a>),
+// }
 
-pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
+// pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
 
-impl<'a> Rule<'a> {
-    pub fn new(constraint: &'a Constraint, root: &'a Value) -> ValueResolutionResult<'a> {
-        match constraint {
-            Constraint::Str(sc) => {
-                match StringRule::new(sc, root) {
-                    Ok(sr) => Bubble::Single(Ok(sr.into())),
-                    Err(e) => Bubble::Single(Err(e))
-                }
-            }
-            Constraint::Obj(oc) => ObjectRule::new(oc, root),
-        }
-    }
+// impl<'a> Rule<'a> {
+//     pub fn new(constraint: &'a Constraint, root: &'a Value) -> ValueResolutionResult<'a> {
+//         match constraint {
+//             Constraint::Str(sc) => {
+//                 match StringRule::new(sc, root) {
+//                     Ok(sr) => Bubble::Single(Ok(sr.into())),
+//                     Err(e) => Bubble::Single(Err(e))
+//                 }
+//             }
+//             Constraint::Obj(oc) => ObjectRule::new(oc, root),
+//         }
+//     }
 
-    pub fn field_name(&self) -> &'a Value {
-        match self {
-            Rule::Str(sr) => sr.field_name,
-            Rule::Obj(or) => or.field_name,
-        }
-    }
+//     pub fn field_name(&self) -> &'a Value {
+//         match self {
+//             Rule::Str(sr) => sr.field_name,
+//             Rule::Obj(or) => or.field_name,
+//         }
+//     }
 
-    pub fn eval(&'a self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
-        let mut path = parent_path.to_vec();
-        path.push(self.field_name());
-        match self {
-            Rule::Str(sr) => sr.eval(value, &path),
-            Rule::Obj(or) => or.eval(value, &path),
-        }
-    }
-}
+//     pub fn eval(&'a self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
+//         let mut path = parent_path.to_vec();
+//         path.push(self.field_name());
+//         match self {
+//             Rule::Str(sr) => sr.eval(value, &path),
+//             Rule::Obj(or) => or.eval(value, &path),
+//         }
+//     }
+// }

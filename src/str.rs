@@ -3,7 +3,7 @@ use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use std::ops::Deref;
 
-use crate::{grammar::{PEType, ParseErr, Rule}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{grammar::{PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 // A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
