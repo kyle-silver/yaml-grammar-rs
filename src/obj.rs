@@ -4,7 +4,7 @@ use grammar::{Rule, ValueResolutionResult, YamlParseResult};
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::RuleEvalResult, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -139,6 +139,7 @@ pub enum ObjRule<'a> {
 pub struct ObjectRule<'a> {
     pub field_name: &'a Value,
     rule: ObjRule<'a>,
+    default: Option<&'a Mapping>,
 }
 
 impl<'a> ObjectRule<'a> {
@@ -155,21 +156,48 @@ impl<'a> ObjectRule<'a> {
                         .map(|r| (r.field_name(), r))
                         .collect();
                     let rule = ObjRule::Fields(map);
-                    let object_rule = ObjectRule { field_name: constraint.field_name, rule, };
+                    let object_rule = ObjectRule { field_name: constraint.field_name, rule, default: constraint.default };
                     Bubble::Single(Ok(Rule::Obj(object_rule)))
                 } else {
                     Bubble::Multi(err.into_iter().flatten().collect())
                 }
             }
             ObjConstr::Any => {
-                let object_rule = ObjectRule { field_name: constraint.field_name, rule: ObjRule::Any, };
+                let object_rule = ObjectRule { field_name: constraint.field_name, rule: ObjRule::Any, default: constraint.default };
                 Bubble::Single(Ok(Rule::Obj(object_rule)))
             },
         }
     }
 
-    pub fn eval(&self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
-        todo!("implement after getting some coffee")
+    pub fn eval(&'a self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
+        if let Value::Mapping(mapping) = value {
+            // todo!("implement after getting some coffee")
+            match &self.rule {
+                ObjRule::Fields(rules) => {
+                    let (ok, err): (Vec<_>, Vec<_>) = rules.into_iter()
+                        .map(|(key, rule)| ObjectRule::subrule(key, rule, mapping, path))
+                        .partition(|b| b.all(Result::is_ok));
+                    if err.is_empty() {
+                        Bubble::Multi(ok.into_iter().flatten().collect())
+                    } else {
+                        Bubble::Multi(err.into_iter().flatten().collect())
+                    }
+                }
+                ObjRule::Any => {
+                    RuleEvalSuccess::new(true, path).into()
+                }
+            }
+        } else {
+            RuleEvalErr::new(path, RuleErrType::IncorrectType(value)).into()
+        }
+    }
+
+    fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
+        if let Some(value) = input.get(key) {
+            rule.eval(value, path)
+        } else {
+            RuleEvalErr::new(path, RuleErrType::IncorrectType(key)).into()
+        }
     }
 }
 

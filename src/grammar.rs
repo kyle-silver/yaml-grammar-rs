@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use obj::ObjectRule;
 use serde_yaml::{Mapping, Value};
-use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, str::{self, StringConstraint, StringRule}, value_ref::ValueResolutionErr};
+use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, rule::RuleEvalResult, str::{self, StringConstraint, StringRule}, value_ref::ValueResolutionErr};
 
 #[macro_export]
 macro_rules! valstr {
@@ -183,6 +183,15 @@ impl<'a> Rule<'a> {
         match self {
             Rule::Str(sr) => sr.field_name,
             Rule::Obj(or) => or.field_name,
+        }
+    }
+
+    pub fn eval(&'a self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
+        let mut path = parent_path.to_vec();
+        path.push(self.field_name());
+        match self {
+            Rule::Str(sr) => sr.eval(value, &path),
+            Rule::Obj(or) => or.eval(value, &path),
         }
     }
 }

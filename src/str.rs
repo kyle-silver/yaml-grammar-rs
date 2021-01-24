@@ -224,6 +224,7 @@ impl<'a> StrRule<'a> {
 pub struct StringRule<'a> {
     pub field_name: &'a Value,
     rule: StrRule<'a>,
+    default: Option<&'a String>,
 }
 
 impl<'a> From<StringRule<'a>> for Rule<'a> {
@@ -238,6 +239,7 @@ impl<'a> StringRule<'a> {
             Ok(rule) => Ok(StringRule {
                 field_name: constraint.field_name,
                 rule,
+                default: constraint.default,
             }),
             Err(ValueResolutionErr::NotFound) => {
                 todo!("Implement search for default values in other rules")
