@@ -3,7 +3,7 @@ use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use std::ops::Deref;
 
-use crate::{grammar::{PEType, ParseErr, Rule}, rule::{RuleErrType, RuleEvalResult}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{grammar::{PEType, ParseErr, Rule}, rule::{RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 // A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
@@ -250,26 +250,26 @@ impl<'a> StringRule<'a> {
         if let Value::String(x) = value {
             match &self.rule {
                 StrRule::Allowed(list) => {
-                    RuleEvalResult::suc(list.contains(&x), path)
+                    RuleEvalSuccess::new(list.contains(&x), path).into()
                 }
                 StrRule::Disallowed(list) => {
-                    RuleEvalResult::suc(!list.contains(&x), path)
+                    RuleEvalSuccess::new(!list.contains(&x), path).into()
                 }
                 StrRule::Regex(re) => {
-                    RuleEvalResult::suc(re.is_match(x), path)
+                    RuleEvalSuccess::new(re.is_match(x), path).into()
                 }
                 StrRule::Equals(other) => {
-                    RuleEvalResult::suc(x == *other, path)
+                    RuleEvalSuccess::new(x == *other, path).into()
                 }
                 StrRule::NotEquals(other) => {
-                    RuleEvalResult::suc(x != *other, path)
+                    RuleEvalSuccess::new(x != *other, path).into()
                 }
                 StrRule::Any => {
-                    RuleEvalResult::suc(true, path)
+                    RuleEvalSuccess::new(true, path).into()
                 }
             }
         } else {
-            RuleEvalResult::err(path, RuleErrType::IncorrectType(value))
+            RuleEvalErr::new(path, RuleErrType::IncorrectType(value)).into()
         }
     }
 }

@@ -319,7 +319,7 @@ mod tests {
         println!("{:?}", input);
         for constraint in constraints {
             println!("{:?}", Rule::new(&constraint, &input));
-        }
+        } 
         
     }
 }
