@@ -1,6 +1,5 @@
 use lazy_static::lazy_static;
 use obj::ObjectRule;
-use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use crate::{bubble::Bubble, obj::{self, ObjectConstraint}, str::{self, StringConstraint, StringRule}, value_ref::ValueResolutionErr};
 

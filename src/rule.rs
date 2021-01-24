@@ -2,6 +2,8 @@ use serde_yaml::Value;
 
 use crate::{bubble::Bubble, value_ref::ValueResolutionErr};
 
+pub type RuleEvalResult<'a> = Bubble<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>>;
+
 #[derive(Debug)]
 pub enum RuleErrType<'a> {
     MissingRequired,
@@ -51,38 +53,3 @@ impl<'a> From<RuleEvalSuccess<'a>> for RuleEvalResult<'a> {
         Bubble::Single(Ok(res))
     }
 }
-
-pub type RuleEvalResult<'a> = Bubble<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>>;
-
-// #[derive(Debug)]
-// pub enum RuleEvalResult<'a> {
-//     Single(Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>),
-//     Multi(Vec<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>>),
-// }
-
-// impl<'a> RuleEvalResult<'a> {
-//     pub fn err(path: &[&'a Value], err: RuleErrType<'a>) -> RuleEvalResult<'a> {
-//         RuleEvalResult::Single(Err(RuleEvalErr::new(path, err)))
-//     }
-
-//     pub fn suc(result: bool, path: &[&'a Value]) -> RuleEvalResult<'a> {
-//         RuleEvalResult::Single(Ok(RuleEvalSuccess::new(path, result)))
-//     }
-
-//     pub fn from(res: Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>) -> RuleEvalResult<'a> {
-//         RuleEvalResult::Single(res)
-//     }
-// }
-
-// impl<'a> IntoIterator for RuleEvalResult<'a> {
-//     type Item = Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>;
-
-//     type IntoIter = std::vec::IntoIter<Self::Item>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         match self {
-//             RuleEvalResult::Single(res) => vec![res].into_iter(),
-//             RuleEvalResult::Multi(v) => v.into_iter(),
-//         }
-//     }
-// }

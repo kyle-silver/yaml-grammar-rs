@@ -4,7 +4,7 @@ use grammar::{Rule, ValueResolutionResult, YamlParseResult};
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{bubble::Bubble, grammar::{self, Constraint, PEType, ParseErr}, rule::RuleEvalResult, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -166,6 +166,10 @@ impl<'a> ObjectRule<'a> {
                 Bubble::Single(Ok(Rule::Obj(object_rule)))
             },
         }
+    }
+
+    pub fn eval(&self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
+        todo!("implement after getting some coffee")
     }
 }
 
