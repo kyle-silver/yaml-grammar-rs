@@ -1,6 +1,6 @@
 // public API
 pub mod grammar;
-pub mod num_constr;
+pub mod num;
 pub mod str;
 pub mod obj;
 pub mod rule;
