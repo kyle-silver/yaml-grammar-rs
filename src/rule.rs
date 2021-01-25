@@ -9,12 +9,12 @@ pub enum RuleErrType<'a> {
     MissingRequired,
     KeyNotFound(&'a Value),
     IncorrectType(&'a Value),
-    Resolution(ValueResolutionErr<'a>),
+    Resolution(ValueResolutionResult<'a>),
 }
 
-impl<'a> From<ValueResolutionErr<'a>> for RuleErrType<'a> {
-    fn from(vre: ValueResolutionErr<'a>) -> Self {
-        RuleErrType::Resolution(vre)
+impl<'a> From<ValueResolutionResult<'a>> for RuleErrType<'a> {
+    fn from(vrr: ValueResolutionResult<'a>) -> Self {
+        RuleErrType::Resolution(vrr)
     }
 }
 

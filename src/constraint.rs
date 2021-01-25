@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use serde_yaml::{Mapping, Value};
 
-use crate::{grammar::{PEType, ParseErr, YamlParseResult}, obj::{self, ObjectConstraint}, str::{self, StringConstraint}, valstr};
+use crate::{parse::{PEType, ParseErr, YamlParseResult}, obj::{self, ObjectConstraint}, str::{self, StringConstraint}, valstr};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Constraint<'a> {

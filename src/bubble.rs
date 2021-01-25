@@ -42,3 +42,9 @@ impl<T> From<Vec<Bubble<T>>> for Bubble<T> {
         Bubble::Multi(v.into_iter().flatten().collect())
     }
 }
+
+impl<T> From<Vec<T>> for Bubble<T> {
+    fn from(v: Vec<T>) -> Self {
+        Bubble::Multi(v)
+    }
+}

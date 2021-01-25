@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use grammar::YamlParseResult;
+use parse::YamlParseResult;
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, constraint::Constraint, grammar::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}};
+use crate::{bubble::Bubble, constraint::Constraint, parse::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}};
 use crate::valstr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -16,7 +16,7 @@ pub enum ObjConstr<'a> {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ObjectConstraint<'a> {
     pub field_name: &'a Value,
-    constr: ObjConstr<'a>,
+    pub constr: ObjConstr<'a>,
     default: Option<&'a Mapping>,
 }
 
@@ -25,7 +25,7 @@ impl<'a> ObjectConstraint<'a> {
         ObjectConstraint { field_name, constr: ObjConstr::Any, default: None }
     }
 
-    fn new(field_name: &'a Value, constr: ObjConstr<'a>, default: Option<&'a Mapping>) -> ObjectConstraint<'a> {
+    pub fn new(field_name: &'a Value, constr: ObjConstr<'a>, default: Option<&'a Mapping>) -> ObjectConstraint<'a> {
         ObjectConstraint { field_name, constr, default }
     }
 
@@ -183,7 +183,7 @@ impl<'a> ObjectRule<'a> {
         }
     }
 
-    fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
         let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
         println!("Key: {:?}, Mapping: {:?}", key, keys);
         if let Some(value) = input.get(key) {
