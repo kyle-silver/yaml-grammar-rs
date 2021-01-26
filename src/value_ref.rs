@@ -8,7 +8,7 @@ macro_rules! lit {
         ValueRef::Literal(&String::from($val))
     };
 }
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ValueResolutionErr<'a> {
     TooShort,
     TooLong,

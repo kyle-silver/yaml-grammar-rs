@@ -119,13 +119,13 @@ pub fn build<'a>(field_name: &'a Value, config: &'a Mapping, path: &[&'a Value])
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ObjRule<'a> {
     Fields(HashMap<&'a Value, Rule<'a>>),
     Any,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ObjectRule<'a> {
     pub field_name: &'a Value,
     rule: ObjRule<'a>,

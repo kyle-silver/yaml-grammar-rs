@@ -4,7 +4,7 @@ use crate::{bubble::Bubble, constraint::Constraint, obj::ObjectRule, str::String
 
 pub type RuleEvalResult<'a> = Bubble<Result<RuleEvalSuccess<'a>, RuleEvalErr<'a>>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RuleErrType<'a> {
     MissingRequired,
     KeyNotFound(&'a Value),
@@ -18,7 +18,7 @@ impl<'a> From<ValueResolutionResult<'a>> for RuleErrType<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RuleEvalErr<'a> {
     path: Vec<&'a Value>,
     err: RuleErrType<'a>,
@@ -37,7 +37,7 @@ impl<'a> From<RuleEvalErr<'a>> for RuleEvalResult<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RuleEvalSuccess<'a> {
     result: bool,
     path: Vec<&'a Value>,
@@ -55,7 +55,7 @@ impl<'a> From<RuleEvalSuccess<'a>> for RuleEvalResult<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Rule<'a> {
     Str(StringRule<'a>),
     Obj(ObjectRule<'a>),

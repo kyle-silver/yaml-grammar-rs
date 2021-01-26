@@ -181,7 +181,7 @@ pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) ->
     StringConstraintBuilder::new(field_name, map, path)?.from_mapping()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StrRule<'a> {
     Allowed(Vec<&'a String>),
     Disallowed(Vec<&'a String>),
@@ -220,7 +220,7 @@ impl<'a> StrRule<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StringRule<'a> {
     pub field_name: &'a Value,
     rule: StrRule<'a>,
