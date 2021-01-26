@@ -165,14 +165,10 @@ impl<'a> ObjectRule<'a> {
         if let Value::Mapping(mapping) = value {
             match &self.rule {
                 ObjRule::Fields(rules) => {
-                    let (ok, err): (Vec<_>, Vec<_>) = rules.into_iter()
+                    let results: Vec<_> = rules.into_iter()
                         .map(|(key, rule)| ObjectRule::subrule(key, rule, mapping, path))
-                        .partition(|b| b.all(Result::is_ok));
-                    if err.is_empty() {
-                        ok.into()
-                    } else {
-                        err.into()
-                    }
+                        .collect();
+                    results.into()
                 }
                 ObjRule::Any => {
                     RuleEvalSuccess::new(true, path).into()

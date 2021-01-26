@@ -17,6 +17,10 @@ impl<'a> From<Constraint<'a>> for YamlParseResult<'a> {
 }
 
 impl<'a> Constraint<'a> {
+    pub fn from_spec(kv: (&'a Value, &'a Value)) -> YamlParseResult<'a> {
+        Constraint::parse(kv.0, kv.1, &vec![])
+    }
+
     pub fn parse(field_name: &'a Value, value: &'a Value, parent_path: &[&'a Value]) -> YamlParseResult<'a> {
         let mut path = parent_path.to_vec();
         path.push(field_name);

@@ -1,5 +1,6 @@
 {
     "files.associations": {
       "*.yamlfmt": "yaml",
+      "*.yamlspec": "yaml",
     }
   }

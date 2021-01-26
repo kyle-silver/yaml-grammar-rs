@@ -1,5 +1,3 @@
-use std::clone;
-
 use constraint::Constraint;
 use parse::{ParseErr, YamlParseResult};
 use obj::{ObjConstr, ObjectConstraint};
@@ -22,45 +20,31 @@ pub enum Evaluation<'a> {
     GrammarParseErr(Vec<ParseErr<'a>>),
     ValueResolutionErr(Vec<ValueResolutionErr<'a>>),
     RuleEvalErr(Vec<RuleEvalErr<'a>>),
-    Success(Vec<RuleEvalSuccess<'a>>),
-    Failure(Vec<RuleEvalErr<'a>>),
-    MixedSuccess { ok: Vec<RuleEvalSuccess<'a>>, err: Vec<RuleEvalErr<'a>> },
+    Completed { ok: Vec<RuleEvalSuccess<'a>>, err: Vec<RuleEvalErr<'a>>},
 }
 
 pub fn parse_grammar(spec: &Mapping) -> YamlParseResult {
-    let res: Vec<_> = spec.iter()
-        .map(|(k, v)| Constraint::parse(k, v, &vec![]))
-        .collect();
+    let res: Vec<_> = spec.iter().map(Constraint::from_spec).collect();
     res.into()
 }
 
-pub fn into_rule<'a>(constraints: Vec<Constraint<'a>>, name: &'a Value) -> ObjectConstraint<'a> {
+pub fn into_constraint<'a>(constraints: Vec<Constraint<'a>>, name: &'a Value) -> ObjectConstraint<'a> {
     let map = constraints.into_iter().map(|c| (c.field_name(), c)).collect();
     ObjectConstraint::new(name, ObjConstr::Fields(map), None)
 }
 
-pub fn evaluate<'a>(spec: &'a Constraint, user_input: &'a Value) -> Evaluation<'a> {
-    let (ok, err): (Vec<_>, Vec<_>) = Rule::new(spec, user_input).get()
-        .into_iter()
-        .partition(Result::is_ok);
-    if !err.is_empty() {
-        return Evaluation::ValueResolutionErr(err.into_iter().map(Result::unwrap_err).collect());
-    }
-    let rules: Vec<_> = ok.into_iter().map(Result::unwrap).collect();
+pub fn rules<'a>(spec: &'a Constraint, user_input: &'a Value) -> Vec<Result<Rule<'a>, ValueResolutionErr<'a>>> {
+    Rule::new(spec, user_input).get().into_iter().collect()
+}
+
+pub fn evaluate<'a>(rules: &'a Vec<Rule<'a>>, user_input: &'a Value) -> Evaluation<'a> {
     let (ok, err): (Vec<_>, Vec<_>) = rules.iter()
         .map(|rule| rule.eval(user_input, &vec![]))
         .flatten()
         .partition(Result::is_ok);
     let ok: Vec<_> = ok.into_iter().map(Result::unwrap).collect();
     let err: Vec<_> = err.into_iter().map(Result::unwrap_err).collect();
-
-    if err.is_empty() {
-        Evaluation::Success(ok)
-    } else if ok.is_empty() {
-        Evaluation::Failure(err)
-    } else {
-        Evaluation::MixedSuccess { ok, err }
-    }
+    Evaluation::Completed { ok, err }
 }
 
 #[cfg(test)]
@@ -90,7 +74,7 @@ mod tests {
             "  world: bar\n",
             "  nested:\n",
             "    foobar: fizzbuzz\n",
-            "other: something else\n",
+            "other: 7\n",
         );
 
         let spec: Mapping = serde_yaml::from_str(spec).unwrap();
@@ -100,10 +84,15 @@ mod tests {
             .map(Result::unwrap)
             .collect();      
         
-        let name = valstr!("");
-        let rule = into_rule(yaml_res, &name);
+        let name = valstr!(".");
+        let obj_constr = into_constraint(yaml_res, &name);
+        let obj_constr = Constraint::Obj(obj_constr);
+        let rules = rules(&obj_constr, &input);
+        let (ok, _): (Vec<_>, _) = rules.into_iter().partition(|r| r.is_ok());
+        let ok = ok.into_iter().map(Result::unwrap).collect();
         println!("EVALUATION:");
-        evaluate(&Constraint::Obj(rule), &input);
+        let eval = evaluate(&ok, &input);
+        println!("FINAL EVAL:\n{:?}", eval);
 
     }
 }
