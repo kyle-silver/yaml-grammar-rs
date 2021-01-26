@@ -1,6 +1,5 @@
 # vim: syntax=yaml
 ---
-
 parent:
   type: object
   fields:

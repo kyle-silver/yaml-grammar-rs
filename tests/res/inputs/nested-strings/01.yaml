@@ -1,0 +1,8 @@
+# vim: syntax=yaml
+---
+parent:
+  hello: foo
+  world: bar
+  nested:
+    foobar:
+other: 7
