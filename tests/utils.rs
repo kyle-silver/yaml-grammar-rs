@@ -1,4 +1,11 @@
 use serde::de::DeserializeOwned;
+use yaml_grammar::valstr;
+
+#[macro_export]
+macro_rules! valpath {
+    ($($x:expr,)*) => (vec![$(&valstr!($x)),*]);
+    ($($x:expr),*) => (vec![$(&valstr!($x)),*]);
+}
 
 pub fn from_file<T: DeserializeOwned>(file: &str) -> T {
     let raw = std::fs::read_to_string(file).unwrap();

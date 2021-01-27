@@ -1,5 +1,5 @@
-use serde_yaml::{Mapping, Value};
-use yaml_grammar::{constraint::Constraint, into_constraint, parse_grammar, rules, valstr, evaluate};
+use serde_yaml::{Mapping, Number, Value};
+use yaml_grammar::{Evaluation, constraint::Constraint, evaluate, into_constraint, parse_grammar, rule::{RuleErrType, RuleEvalErr, RuleEvalSuccess}, rules, valstr};
 
 mod utils;
 
@@ -23,4 +23,16 @@ pub fn syntactically_valid() {
     println!("EVALUATION:");
     let eval = evaluate(&ok, &input);
     println!("FINAL EVAL:\n{:?}", eval);
+
+    if let Evaluation::Completed { ok, err } = eval {
+        assert_eq!(3, ok.len());
+        assert!(ok.contains(&RuleEvalSuccess::new(false, &valpath![".", "parent", "hello"])));
+        assert!(ok.contains(&RuleEvalSuccess::new(true, &valpath![".", "parent", "world"])));
+        assert!(ok.contains(&RuleEvalSuccess::new(true, &valpath![".", "parent", "nested", "foobar"])));
+
+        assert_eq!(1, err.len());
+        assert!(err.contains(&RuleEvalErr::new(&valpath![".", "other"], RuleErrType::IncorrectType(&Value::Number(Number::from(7))))))
+    } else {
+        panic!("Result was not `Evaluation::Completed`")
+    }
 }

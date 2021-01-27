@@ -1,8 +1,8 @@
-# vim: syntax=yaml
----
 parent:
+  # this field doesn't match `world`
   hello: foo
-  world: bar
+  world: bar 
   nested:
-    foobar:
+    foobar: fizzbuzz
+# this should be a string, not a number
 other: 7
