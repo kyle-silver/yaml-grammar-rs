@@ -181,7 +181,6 @@ impl<'a> ObjectRule<'a> {
 
     pub fn subrule(key: &'a Value, rule: Rule<'a>, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
         let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
-        println!("Key: {:?}, Mapping: {:?}", key, keys);
         if let Some(value) = input.get(key) {
             rule.eval(value, path)
         } else {
@@ -305,49 +304,5 @@ mod tests {
             .expect_err("First entry should be an error");
         let expected = ParseErr::new(&vec![&name], PEType::IncorrectType(&Value::Null));
         assert_eq!(expected, pe);
-    }
-
-    #[test]
-    fn resolution_test() {
-        let spec = concat!(
-            "type: object\n",
-            "fields:\n",
-            "  hello:\n",
-            "    type: string\n",
-            "    eq: [parent, world]\n",
-            "  world: string\n",
-            "  nested:\n",
-            "    type: object\n",
-            "    fields:\n",
-            "      foobar: string\n"
-        );
-
-        let input = concat!(
-            "parent:\n",
-            "  hello: foo\n",
-            "  world: bar\n",
-            "  nested:\n",
-            "    foobar: fizzbuzz\n"
-        );
-
-        let config: Mapping = serde_yaml::from_str(spec).unwrap();
-        let name = valstr!("parent");
-        let constraints: Vec<Constraint> = build(&name, &config, &vec![]).get().into_iter()
-            .map(Result::unwrap)
-            .collect();
-
-        let input: Value = serde_yaml::from_str(input).unwrap();
-        println!("{:?}", input);
-        for constraint in constraints {
-            let results = Rule::new(constraint, &input);
-            println!("results: {:?}", results);
-            for res in results.get() {
-                if let Ok(rule) = res {
-                    println!("{:?}", rule.eval(&input.get(valstr!("parent")).unwrap(), &vec![]));
-                }
-            }
-        } 
-        
-        
     }
 }
