@@ -24,8 +24,8 @@ pub fn spec<T: DeserializeOwned>(case: &str) -> T {
     serde_yaml::from_str(&raw).unwrap()
 }
 
-pub fn input<T: DeserializeOwned>(case: &str) -> T {
-    let path = format!("tests/res/{}/input.yaml", case);
+pub fn input<T: DeserializeOwned>(case: &str, file: &str) -> T {
+    let path = format!("tests/res/{}/{}", case, file);
     let raw = std::fs::read_to_string(path).unwrap();
     serde_yaml::from_str(&raw).unwrap()
 }
