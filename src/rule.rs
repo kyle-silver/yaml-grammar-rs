@@ -83,7 +83,7 @@ impl<'a> Rule<'a> {
         }
     }
 
-    pub fn eval(&'a self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn eval(self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
         let mut path = parent_path.to_vec();
         path.push(self.field_name());
         match self {

@@ -1,5 +1,5 @@
 use serde_yaml::{Mapping, Number, Value};
-use yaml_grammar::{Evaluation, constraint::Constraint, evaluate, into_constraint, parse_grammar, rule::{RuleErrType, RuleEvalErr, RuleEvalSuccess}, rules, valstr};
+use yaml_grammar::{Evaluation, rule::{RuleErrType, RuleEvalErr, RuleEvalSuccess}, valstr, yamlfmt};
 
 mod utils;
 
@@ -10,17 +10,8 @@ pub fn syntactically_valid() {
     println!("{:?}", spec);
     println!("{:?}", input);
 
-    let yaml_res: Vec<_> = parse_grammar(&spec).into_iter()
-            .map(Result::unwrap)
-            .collect();      
-        
     let name = valstr!(".");
-    let obj_constr = into_constraint(yaml_res, &name);
-    let obj_constr = Constraint::Obj(obj_constr);
-    let rules = rules(obj_constr, &input);
-    let (ok, _): (Vec<_>, _) = rules.into_iter().partition(|r| r.is_ok());
-    let ok = ok.into_iter().map(Result::unwrap).collect();
-    let eval = evaluate(&ok, &input);
+    let eval = yamlfmt(&spec, &input, &name);
 
     if let Evaluation::Completed { ok, err } = eval {
         assert_eq!(3, ok.len());

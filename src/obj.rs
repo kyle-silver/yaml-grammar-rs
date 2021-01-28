@@ -159,11 +159,11 @@ impl<'a> ObjectRule<'a> {
         }
     }
 
-    pub fn eval(&'a self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn eval(self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
         // this doesn't work for the very top level of rules
         // that evaluation is treated as a special case and done in a separate loop
         if let Value::Mapping(mapping) = value {
-            match &self.rule {
+            match self.rule {
                 ObjRule::Fields(rules) => {
                     let results: Vec<_> = rules.into_iter()
                         .map(|(key, rule)| ObjectRule::subrule(key, rule, mapping, path))
@@ -179,7 +179,7 @@ impl<'a> ObjectRule<'a> {
         }
     }
 
-    pub fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn subrule(key: &'a Value, rule: Rule<'a>, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
         let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
         println!("Key: {:?}, Mapping: {:?}", key, keys);
         if let Some(value) = input.get(key) {
