@@ -180,7 +180,6 @@ impl<'a> ObjectRule<'a> {
     }
 
     pub fn subrule(key: &'a Value, rule: Rule<'a>, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
-        let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
         if let Some(value) = input.get(key) {
             rule.eval(value, path)
         } else {
