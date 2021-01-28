@@ -9,7 +9,7 @@ use crate::valstr;
 // A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
 // most of the time you would never want to use a regex as a key -- but really we
 // just want this for test coverage
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WrappedRegex(Regex);
 
 impl Deref for WrappedRegex {
@@ -185,14 +185,14 @@ pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) ->
 pub enum StrRule<'a> {
     Allowed(Vec<&'a String>),
     Disallowed(Vec<&'a String>),
-    Regex(&'a WrappedRegex),
+    Regex(Box<WrappedRegex>),
     Equals(&'a String),
     NotEquals(&'a String),
     Any,
 }
 
 impl<'a> StrRule<'a> {
-    pub fn new(constr: &'a StrConstr, root: &'a Value) -> Result<StrRule<'a>, ValueResolutionErr<'a>> {
+    pub fn new(constr: StrConstr<'a>, root: &'a Value) -> Result<StrRule<'a>, ValueResolutionErr<'a>> {
         match constr {
             StrConstr::Allowed(v) => {
                 let resolved: Result<_,_> = v.iter().map(|val| val.resolve(root)).collect();
@@ -203,7 +203,7 @@ impl<'a> StrRule<'a> {
                 Ok(StrRule::Disallowed(resolved?))
             }
             StrConstr::Regex(re) => {
-                Ok(StrRule::Regex(re))
+                Ok(StrRule::Regex(Box::new(*re)))
             }
             StrConstr::Equals(vr) => {
                 let resolved = vr.resolve(root)?;
@@ -234,8 +234,8 @@ impl<'a> From<StringRule<'a>> for Rule<'a> {
 }
 
 impl<'a> StringRule<'a> {
-    pub fn new(constraint: &'a StringConstraint, root: &'a Value) -> Result<StringRule<'a>, ValueResolutionErr<'a>> {
-        match StrRule::new(&constraint.constr, root) {
+    pub fn new(constraint: StringConstraint<'a>, root: &'a Value) -> Result<StringRule<'a>, ValueResolutionErr<'a>> {
+        match StrRule::new(constraint.constr, root) {
             Ok(rule) => Ok(StringRule {
                 field_name: constraint.field_name,
                 rule,

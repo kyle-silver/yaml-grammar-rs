@@ -133,8 +133,8 @@ pub struct ObjectRule<'a> {
 }
 
 impl<'a> ObjectRule<'a> {
-    pub fn new(constraint: &'a ObjectConstraint, root: &'a Value) -> ValueResolutionResult<'a> {
-        match &constraint.constr {
+    pub fn resolve(constraint: ObjectConstraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
+        match constraint.constr {
             ObjConstr::Fields(constraints) => {
                 let (ok, err): (Vec<_>, Vec<_>) = constraints.into_iter()
                     .map(|(_, c)| Rule::new(c, root))
@@ -159,11 +159,11 @@ impl<'a> ObjectRule<'a> {
         }
     }
 
-    pub fn eval(&'a self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn eval(self, value: &'a Value, path: &[&'a Value]) -> RuleEvalResult<'a> {
         // this doesn't work for the very top level of rules
         // that evaluation is treated as a special case and done in a separate loop
         if let Value::Mapping(mapping) = value {
-            match &self.rule {
+            match self.rule {
                 ObjRule::Fields(rules) => {
                     let results: Vec<_> = rules.into_iter()
                         .map(|(key, rule)| ObjectRule::subrule(key, rule, mapping, path))
@@ -179,7 +179,7 @@ impl<'a> ObjectRule<'a> {
         }
     }
 
-    pub fn subrule(key: &'a Value, rule: &'a Rule, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn subrule(key: &'a Value, rule: Rule<'a>, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
         let keys: Vec<_> = input.iter().map(|(k,_)| k).collect();
         println!("Key: {:?}, Mapping: {:?}", key, keys);
         if let Some(value) = input.get(key) {
@@ -339,7 +339,7 @@ mod tests {
         let input: Value = serde_yaml::from_str(input).unwrap();
         println!("{:?}", input);
         for constraint in constraints {
-            let results = Rule::new(&constraint, &input);
+            let results = Rule::new(constraint, &input);
             println!("results: {:?}", results);
             for res in results.get() {
                 if let Ok(rule) = res {

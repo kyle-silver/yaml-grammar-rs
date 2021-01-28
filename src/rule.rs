@@ -64,7 +64,7 @@ pub enum Rule<'a> {
 pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
 
 impl<'a> Rule<'a> {
-    pub fn new(constraint: &'a Constraint, root: &'a Value) -> ValueResolutionResult<'a> {
+    pub fn new(constraint: Constraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
         match constraint {
             Constraint::Str(sc) => {
                 match StringRule::new(sc, root) {
@@ -72,7 +72,7 @@ impl<'a> Rule<'a> {
                     Err(e) => Bubble::Single(Err(e))
                 }
             }
-            Constraint::Obj(oc) => ObjectRule::new(oc, root),
+            Constraint::Obj(oc) => ObjectRule::resolve(oc, root),
         }
     }
 
@@ -83,7 +83,7 @@ impl<'a> Rule<'a> {
         }
     }
 
-    pub fn eval(&'a self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
+    pub fn eval(self, value: &'a Value, parent_path: &[&'a Value]) -> RuleEvalResult<'a> {
         let mut path = parent_path.to_vec();
         path.push(self.field_name());
         match self {
