@@ -17,7 +17,7 @@ pub fn syntactically_valid() {
     let name = valstr!(".");
     let obj_constr = into_constraint(yaml_res, &name);
     let obj_constr = Constraint::Obj(obj_constr);
-    let rules = rules(&obj_constr, &input);
+    let rules = rules(obj_constr, &input);
     let (ok, _): (Vec<_>, _) = rules.into_iter().partition(|r| r.is_ok());
     let ok = ok.into_iter().map(Result::unwrap).collect();
     let eval = evaluate(&ok, &input);

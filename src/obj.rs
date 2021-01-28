@@ -133,8 +133,8 @@ pub struct ObjectRule<'a> {
 }
 
 impl<'a> ObjectRule<'a> {
-    pub fn new(constraint: &'a ObjectConstraint, root: &'a Value) -> ValueResolutionResult<'a> {
-        match &constraint.constr {
+    pub fn new(constraint: ObjectConstraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
+        match constraint.constr {
             ObjConstr::Fields(constraints) => {
                 let (ok, err): (Vec<_>, Vec<_>) = constraints.into_iter()
                     .map(|(_, c)| Rule::new(c, root))
@@ -339,7 +339,7 @@ mod tests {
         let input: Value = serde_yaml::from_str(input).unwrap();
         println!("{:?}", input);
         for constraint in constraints {
-            let results = Rule::new(&constraint, &input);
+            let results = Rule::new(constraint, &input);
             println!("results: {:?}", results);
             for res in results.get() {
                 if let Ok(rule) = res {

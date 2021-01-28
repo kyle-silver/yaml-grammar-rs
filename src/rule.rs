@@ -64,7 +64,7 @@ pub enum Rule<'a> {
 pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
 
 impl<'a> Rule<'a> {
-    pub fn new(constraint: &'a Constraint, root: &'a Value) -> ValueResolutionResult<'a> {
+    pub fn new(constraint: Constraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
         match constraint {
             Constraint::Str(sc) => {
                 match StringRule::new(sc, root) {
