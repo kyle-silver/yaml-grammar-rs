@@ -185,7 +185,7 @@ pub fn build<'a>(field_name: &'a Value, map: &'a Mapping, path: &[&'a Value]) ->
 pub enum StrRule<'a> {
     Allowed(Vec<&'a String>),
     Disallowed(Vec<&'a String>),
-    Regex(WrappedRegex),
+    Regex(Box<WrappedRegex>),
     Equals(&'a String),
     NotEquals(&'a String),
     Any,
@@ -203,7 +203,7 @@ impl<'a> StrRule<'a> {
                 Ok(StrRule::Disallowed(resolved?))
             }
             StrConstr::Regex(re) => {
-                Ok(StrRule::Regex(*re))
+                Ok(StrRule::Regex(Box::new(*re)))
             }
             StrConstr::Equals(vr) => {
                 let resolved = vr.resolve(root)?;

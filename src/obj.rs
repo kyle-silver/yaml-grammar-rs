@@ -133,7 +133,7 @@ pub struct ObjectRule<'a> {
 }
 
 impl<'a> ObjectRule<'a> {
-    pub fn new(constraint: ObjectConstraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
+    pub fn resolve(constraint: ObjectConstraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
         match constraint.constr {
             ObjConstr::Fields(constraints) => {
                 let (ok, err): (Vec<_>, Vec<_>) = constraints.into_iter()

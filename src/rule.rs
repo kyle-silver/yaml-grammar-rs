@@ -72,7 +72,7 @@ impl<'a> Rule<'a> {
                     Err(e) => Bubble::Single(Err(e))
                 }
             }
-            Constraint::Obj(oc) => ObjectRule::new(oc, root),
+            Constraint::Obj(oc) => ObjectRule::resolve(oc, root),
         }
     }
 

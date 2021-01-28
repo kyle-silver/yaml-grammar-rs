@@ -48,7 +48,7 @@ pub fn yamlfmt<'a>(spec: &'a Mapping, input: &'a Value, name: &'a Value) -> Eval
     // if all the rules are valid, evaluate them
     let rules: Vec<_> = rules.into_iter().map(Result::unwrap).collect();
     let (ok, err): (Vec<_>, _) = rules.into_iter()
-        .map(|rule| rule.eval(input, &vec![]))
+        .map(|rule| rule.eval(input, &[]))
         .flatten()
         .partition(Result::is_ok);
     let ok = ok.into_iter().map(Result::unwrap).collect();
