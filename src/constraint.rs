@@ -4,7 +4,7 @@ use serde_yaml::{Mapping, Value};
 
 use crate::{parse::{PEType, ParseErr, YamlParseResult}, obj::{self, ObjectConstraint}, str::{self, StringConstraint}, valstr};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Constraint<'a> {
     Str(StringConstraint<'a>),
     Obj(ObjectConstraint<'a>)

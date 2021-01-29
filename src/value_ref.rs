@@ -1,6 +1,6 @@
 use serde_yaml::{Mapping, Number, Sequence, Value};
 
-use crate::parse::PEType;
+use crate::{constraint::Constraint, parse::PEType};
 
 #[macro_export]
 macro_rules! lit {
@@ -8,17 +8,37 @@ macro_rules! lit {
         ValueRef::Literal(&String::from($val))
     };
 }
+
+/// These errors occur in the case where a constraint references a field's value,
+/// but that field is not supplied by the user; in which case, we check to see if
+/// the yamlfmt provides a default value which can be substituted during value
+/// resolution. 
+/// The paths here (represented as vectors of values) are residual, meaning that
+/// they are not the complete path. The paths are only from the point of error
+/// onwards. The complete path is present in the yamlfmt, and if the caller receives
+/// any of these errors, then they necessarily have access to the absolute path.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum DefaultFetchErr<'a> {
+    IncorrectType {
+        residual_path: Vec<&'a Value>,
+        constr: Constraint<'a>
+    },
+    KeyNotFound(Vec<&'a Value>),
+    ConstraintIsAny(Vec<&'a Value>),
+    PathIsTooShort(Vec<&'a Value>),
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ValueResolutionErr<'a> {
     TooShort,
     TooLong,
-    NotFound,
+    NotFound(Vec<&'a Value>),
     NonTerminalType(&'a Value),
     IncorrectType(&'a Value),
     Unimplemented,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValueRef<'a, T> {
     Literal(&'a T),
     AbsolutePath(Vec<&'a Value>)
@@ -51,7 +71,7 @@ impl<'a, T> ValueRef<'a, T> {
                         if let Some(val) = m.get(next) {
                             curr = val;
                         } else {
-                            return Err(ValueResolutionErr::NotFound);
+                            return Err(ValueResolutionErr::NotFound(abs_path.clone()));
                         }
                     } else {
                         return if iter.peek().is_none() {

@@ -4,16 +4,16 @@ use parse::YamlParseResult;
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, constraint::Constraint, parse::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}};
+use crate::{bubble::Bubble, constraint::Constraint, parse::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}, value_ref::{DefaultFetchErr, ValueResolutionErr}};
 use crate::valstr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ObjConstr<'a> {
     Fields(HashMap<&'a Value, Constraint<'a>>),
     Any,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObjectConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: ObjConstr<'a>,
@@ -32,6 +32,34 @@ impl<'a> ObjectConstraint<'a> {
     pub fn add(&mut self, field_name: &'a Value, constraint: Constraint<'a>) {
         if let ObjConstr::Fields(map) = &mut self.constr {
             map.insert(&field_name, constraint);
+        }
+    }
+
+    pub fn constraint(&self, path: &[&'a Value]) -> Result<&'a Constraint, DefaultFetchErr<'a>> {
+        match &self.constr {
+            ObjConstr::Fields(f) => {
+                let key = path.iter().next().ok_or_else(|| DefaultFetchErr::PathIsTooShort(path.to_vec()))?;
+                if let Some(constr) = f.get(key) {
+                    // if we're at the end of the line, return
+                    if path.len() == 1 {
+                        return Ok(constr);
+                    }
+                    // if we need to traverse further, see if that's possible
+                    match constr {
+                        Constraint::Obj(obj_constr) => {
+                            // we know the length is at least 1 (from above)
+                            // so there's no risk of panicking
+                            obj_constr.constraint(&path[1..])
+                        }
+                        _ => Err(DefaultFetchErr::IncorrectType{ residual_path: path.to_vec(), constr: constr.clone() }),
+                    }
+                } else {
+                    return Err(DefaultFetchErr::KeyNotFound(path.to_vec()));
+                }
+            }
+            ObjConstr::Any => {
+                Err(DefaultFetchErr::ConstraintIsAny(path.to_vec()))
+            }
         }
     }
 }
@@ -193,8 +221,13 @@ mod tests {
     use regex::Regex;
 
     use super::*;
-    use crate::str::StringConstraint;
+    use crate::{constraint, str::StringConstraint};
     use crate::valstr;
+
+    macro_rules! valpath {
+        ($($x:expr,)*) => (vec![$(&valstr!($x)),*]);
+        ($($x:expr),*) => (vec![$(&valstr!($x)),*]);
+    }
 
     #[test]
     fn obj_constr_valid() {
@@ -304,4 +337,107 @@ mod tests {
         let expected = ParseErr::new(&vec![&name], PEType::IncorrectType(&Value::Null));
         assert_eq!(expected, pe);
     }
+
+    #[test]
+    fn resolving_any_is_err() {
+        // let name = valstr!()
+        // let strconstr = StringConstraint::default(field_name)
+        let name = valstr!("any");
+        let any = ObjectConstraint::default(&name);
+        let vals = [valstr!("any"), valstr!("foo")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = any.constraint(&path);
+        assert_eq!(res, Err(DefaultFetchErr::ConstraintIsAny(valpath!["any", "foo"])));
+    }
+
+    #[test]
+    fn fetch_default_for_single_layer() {
+        let str_name = valstr!("foo");
+        let strconstr = StringConstraint::default(&str_name);
+        let constr = Constraint::Str(strconstr);
+        let obj_name = valstr!("parent");
+        let mut map = HashMap::new();
+        map.insert(&str_name, constr);
+        let parent = ObjectConstraint {
+            field_name: &obj_name,
+            constr: ObjConstr::Fields(map),
+            default: None,
+        };
+        // fetch a value that exists
+        let vals = [valstr!("foo")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = parent.constraint(&path);
+        assert_eq!(res, Ok(&Constraint::Str(StringConstraint::default(&valstr!("foo")))));
+        // fetch a value that doesn't
+        let vals = [valstr!("bar")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = parent.constraint(&path);
+        assert_eq!(res, Err(DefaultFetchErr::KeyNotFound(vec!(&valstr!("bar")))));
+        // fetch a path that's too short
+        let res = parent.constraint(&[]);
+        assert_eq!(res, Err(DefaultFetchErr::PathIsTooShort(vec![])));
+        // fetch a path that's too long
+        let vals = [valstr!("foo"), valstr!("bar")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = parent.constraint(&path);
+        assert_eq!(res, Err(DefaultFetchErr::IncorrectType {
+            residual_path: valpath!["foo", "bar"], 
+            constr: Constraint::Str(StringConstraint::default(&valstr!("foo")))
+        }));
+    }
+
+    #[test]
+    fn fetch_default_from_nested() {
+        // inner constraint
+        let str_name = valstr!("foo");
+        let strconstr = StringConstraint::default(&str_name);
+        let constr = Constraint::Str(strconstr);
+        let inner_name = valstr!("inner");
+        let mut map = HashMap::new();
+        map.insert(&str_name, constr);
+        let inner = ObjectConstraint {
+            field_name: &inner_name,
+            constr: ObjConstr::Fields(map),
+            default: None,
+        };
+        let inner_constr = Constraint::Obj(inner);
+        // save this for later
+        let inner_constr_clone = inner_constr.clone();
+        // outer constraint
+        let outer_name = valstr!("outer");
+        let mut map = HashMap::new();
+        map.insert(&inner_name, inner_constr);
+        let outer = ObjectConstraint {
+            field_name: &outer_name,
+            constr: ObjConstr::Fields(map),
+            default: None,
+        };
+        // fetch foo from the nested structure
+        let vals = [valstr!("inner"), valstr!("foo")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = outer.constraint(&path);
+        assert_eq!(res, Ok(&Constraint::Str(StringConstraint::default(&valstr!("foo")))));
+        // fetch a value that doesn't exist in the nested structure
+        let vals = [valstr!("inner"), valstr!("bar")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = outer.constraint(&path);
+        // we only get the residual path because we're passing slices
+        // the complete path can be passed higher up
+        assert_eq!(res, Err(DefaultFetchErr::KeyNotFound(valpath!["bar"])));
+        // fetch the parent constraint
+        let vals = [valstr!("inner")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = outer.constraint(&path);
+        assert_eq!(res, Ok(&inner_constr_clone));
+        // fetch a path that's too long
+        let vals = [valstr!("inner"), valstr!("foo"), valstr!("bar")];
+        let path: Vec<_> = vals.iter().collect();
+        let res = outer.constraint(&path);
+        // we only get the residual path here too
+        assert_eq!(res, Err(DefaultFetchErr::IncorrectType {
+            residual_path: valpath!["foo", "bar"], 
+            constr: Constraint::Str(StringConstraint::default(&valstr!("foo")))
+        }));
+    }
+
 }

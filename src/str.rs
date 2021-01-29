@@ -28,7 +28,7 @@ impl PartialEq for WrappedRegex {
 
 impl Eq for WrappedRegex {}
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StrConstr<'a> {
     Allowed(Vec<ValueRef<'a, String>>),
     Disallowed(Vec<ValueRef<'a, String>>),
@@ -38,7 +38,7 @@ pub enum StrConstr<'a> {
     Any,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: StrConstr<'a>,
@@ -241,7 +241,7 @@ impl<'a> StringRule<'a> {
                 rule,
                 default: constraint.default,
             }),
-            Err(ValueResolutionErr::NotFound) => {
+            Err(ValueResolutionErr::NotFound(path)) => {
                 todo!("Implement search for default values in other rules")
             }
             Err(v) => Err(v)
