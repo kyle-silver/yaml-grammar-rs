@@ -1,6 +1,6 @@
 use serde_yaml::{Mapping, Number, Sequence, Value};
 
-use crate::{constraint::{self, Constraint}, parse::PEType};
+use crate::{constraint::Constraint, parse::PEType};
 
 #[macro_export]
 macro_rules! lit {

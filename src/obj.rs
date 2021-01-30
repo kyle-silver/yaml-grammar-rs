@@ -4,7 +4,7 @@ use parse::YamlParseResult;
 use lazy_static::lazy_static;
 use serde_yaml::{Mapping, Value};
 
-use crate::{bubble::Bubble, constraint::Constraint, parse::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}, value_ref::{DefaultFetchErr, ValueResolutionErr}};
+use crate::{bubble::Bubble, constraint::Constraint, parse::{self, PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess, ValueResolutionResult}, value_ref::DefaultFetchErr};
 use crate::valstr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -223,7 +223,7 @@ mod tests {
     use regex::Regex;
 
     use super::*;
-    use crate::{constraint, str::StringConstraint};
+    use crate::str::StringConstraint;
     use crate::valstr;
 
     macro_rules! valpath {

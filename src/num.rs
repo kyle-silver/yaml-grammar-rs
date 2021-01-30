@@ -28,7 +28,7 @@ impl<'a> NumberConstraint<'a> {
         NumberConstraint { field_name, constr: NumConstr::Any, default: None }
     }
 
-    fn new(field_name: &'a Value, constr: NumConstr<'a>, default: Option<&'a Number>) -> NumberConstraint<'a> {
+    fn _new(field_name: &'a Value, constr: NumConstr<'a>, default: Option<&'a Number>) -> NumberConstraint<'a> {
         NumberConstraint { field_name, constr, default }
     }
 }

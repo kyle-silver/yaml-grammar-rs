@@ -81,7 +81,7 @@ impl<'a> Constraint<'a> {
 
     pub fn fetch(&self, path: &[&'a Value]) -> Result<&Constraint<'a>, DefaultFetchErr<'a>> {
         match &self {
-            Constraint::Str(s) => Err(DefaultFetchErr::IncorrectType {
+            Constraint::Str(_) => Err(DefaultFetchErr::IncorrectType {
                 residual_path: path.to_vec(),
                 constr: self.clone(),
             }),

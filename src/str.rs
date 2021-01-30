@@ -75,7 +75,7 @@ impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
         }
         if let Some(val) = map.get(&DEFAULT) {
             match val {
-                Value::String(s) => Ok(Some(val)),
+                Value::String(_) => Ok(Some(val)),
                 _ => Err(ParseErr::new(path, PEType::InvalidDefault(val)))
             }
         } else {
