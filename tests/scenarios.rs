@@ -51,5 +51,17 @@ pub fn compare_against_default() {
     let input: Value = utils::input("default-values", "missing-optional.yaml");
     let name = valstr!(".");
     let eval = yamlfmt(&spec, &input, &name);
-    println!("{:?}", eval);
+
+    if let Evaluation::Completed { ok, err } = eval {
+        // successes
+        assert_eq!(3, ok.len());
+        assert!(ok.contains(&RuleEvalSuccess::new(true, &valpath![".", "parent", "world"])));
+        assert!(ok.contains(&RuleEvalSuccess::new(true, &valpath![".", "parent", "nested", "foobar"])));
+        assert!(ok.contains(&RuleEvalSuccess::new(false, &valpath![".", "other"])));
+        // errors
+        assert_eq!(1, err.len());
+        assert!(err.contains(&RuleEvalErr::new(&valpath![".", "parent", "hello"], RuleErrType::IncorrectType(&valnum!(9)))));
+    } else {
+        panic!("Result was not `Evaluation::Completed`");
+    }
 }
