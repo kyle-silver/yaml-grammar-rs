@@ -39,7 +39,8 @@ pub fn yamlfmt<'a>(spec: &'a Mapping, input: &'a Value, name: &'a Value) -> Eval
     let map = constraints.into_iter().map(|c| (c.field_name(), c)).collect();
     let objconstr = ObjectConstraint::new(name, ObjConstr::Fields(map), None);
     let constraint = Constraint::Obj(objconstr);
-    let (rules, err): (Vec<_>, _) = Rule::new(constraint, &input).get().into_iter()
+    let context = constraint.clone();
+    let (rules, err): (Vec<_>, _) = Rule::new(constraint, &input, &context).get().into_iter()
         .partition(Result::is_ok);
     if !err.is_empty() {
         return Evaluation::ValueResolutionErr(err.into_iter().map(Result::unwrap_err).collect());

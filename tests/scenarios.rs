@@ -44,3 +44,12 @@ pub fn missing_nested() {
         panic!("Result was not `Evaluation::Completed`")
     }
 }
+
+#[test]
+pub fn compare_against_default() {
+    let spec: Mapping = utils::spec("default-values");
+    let input: Value = utils::input("default-values", "missing-optional.yaml");
+    let name = valstr!(".");
+    let eval = yamlfmt(&spec, &input, &name);
+    println!("{:?}", eval);
+}

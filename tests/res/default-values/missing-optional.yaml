@@ -1,0 +1,8 @@
+parent:
+  # this field doesn't match `world`
+  hello: foo
+  world: bar 
+  nested:
+    wockets: 8
+# this should be a string, not a number
+other: this is a default value

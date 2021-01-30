@@ -3,7 +3,7 @@ use regex::Regex;
 use serde_yaml::{Mapping, Value};
 use std::ops::Deref;
 
-use crate::{parse::{PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
+use crate::{constraint::Constraint, parse::{PEType, ParseErr}, rule::{Rule, RuleErrType, RuleEvalErr, RuleEvalResult, RuleEvalSuccess}, value_ref::{ValueRef, ValueResolutionErr}};
 use crate::valstr;
 
 // A wrapper type because Regex doesn't implement Eq or PartialEq. In fairness,
@@ -192,25 +192,25 @@ pub enum StrRule<'a> {
 }
 
 impl<'a> StrRule<'a> {
-    pub fn new(constr: StrConstr<'a>, root: &'a Value) -> Result<StrRule<'a>, ValueResolutionErr<'a>> {
+    pub fn new(constr: StrConstr<'a>, root: &'a Value, context: &Constraint<'a>) -> Result<StrRule<'a>, ValueResolutionErr<'a>> {
         match constr {
             StrConstr::Allowed(v) => {
-                let resolved: Result<_,_> = v.iter().map(|val| val.resolve(root)).collect();
+                let resolved: Result<_,_> = v.iter().map(|val| val.resolve(root, context)).collect();
                 Ok(StrRule::Allowed(resolved?))
             }
             StrConstr::Disallowed(v) => {
-                let resolved: Result<_,_> = v.iter().map(|val| val.resolve(root)).collect();
+                let resolved: Result<_,_> = v.iter().map(|val| val.resolve(root, context)).collect();
                 Ok(StrRule::Disallowed(resolved?))
             }
             StrConstr::Regex(re) => {
                 Ok(StrRule::Regex(Box::new(*re)))
             }
             StrConstr::Equals(vr) => {
-                let resolved = vr.resolve(root)?;
+                let resolved = vr.resolve(root, context)?;
                 Ok(StrRule::Equals(resolved))
             }
             StrConstr::NotEquals(vr) => {
-                let resolved = vr.resolve(root)?;
+                let resolved = vr.resolve(root, context)?;
                 Ok(StrRule::NotEquals(resolved))
             }
             StrConstr::Any => {
@@ -224,7 +224,7 @@ impl<'a> StrRule<'a> {
 pub struct StringRule<'a> {
     pub field_name: &'a Value,
     rule: StrRule<'a>,
-    default: Option<&'a String>,
+    pub default: Option<&'a String>,
 }
 
 impl<'a> From<StringRule<'a>> for Rule<'a> {
@@ -234,16 +234,13 @@ impl<'a> From<StringRule<'a>> for Rule<'a> {
 }
 
 impl<'a> StringRule<'a> {
-    pub fn new(constraint: StringConstraint<'a>, root: &'a Value) -> Result<StringRule<'a>, ValueResolutionErr<'a>> {
-        match StrRule::new(constraint.constr, root) {
+    pub fn new(constraint: StringConstraint<'a>, root: &'a Value, context: &Constraint<'a>) -> Result<StringRule<'a>, ValueResolutionErr<'a>> {
+        match StrRule::new(constraint.constr, root, context) {
             Ok(rule) => Ok(StringRule {
                 field_name: constraint.field_name,
                 rule,
                 default: constraint.default,
             }),
-            Err(ValueResolutionErr::NotFound(path)) => {
-                todo!("Implement search for default values in other rules")
-            }
             Err(v) => Err(v)
         }
     }

@@ -1,0 +1,18 @@
+# vim: syntax=yaml
+---
+parent:
+  type: object
+  fields:
+    hello:
+      type: string
+      eq: [parent, world]
+    world: string
+    nested:
+      type: object
+      fields:
+        foobar:
+          type: string
+          default: this is a default value
+other:
+  type: string
+  eq: [parent, nested, foobar]

@@ -1,4 +1,6 @@
-use serde_yaml::Value;
+use std::default;
+
+use serde_yaml::{Value};
 
 use crate::{bubble::Bubble, constraint::Constraint, obj::ObjectRule, str::StringRule, value_ref::ValueResolutionErr};
 
@@ -64,15 +66,15 @@ pub enum Rule<'a> {
 pub type ValueResolutionResult<'a> = Bubble<Result<Rule<'a>, ValueResolutionErr<'a>>>;
 
 impl<'a> Rule<'a> {
-    pub fn new(constraint: Constraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
+    pub fn new(constraint: Constraint<'a>, root: &'a Value, context: &Constraint<'a>) -> ValueResolutionResult<'a> {
         match constraint {
             Constraint::Str(sc) => {
-                match StringRule::new(sc, root) {
+                match StringRule::new(sc, root, context) {
                     Ok(sr) => Bubble::Single(Ok(sr.into())),
                     Err(e) => Bubble::Single(Err(e))
                 }
             }
-            Constraint::Obj(oc) => ObjectRule::resolve(oc, root),
+            Constraint::Obj(oc) => ObjectRule::resolve(oc, root, context),
         }
     }
 

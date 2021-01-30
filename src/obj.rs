@@ -17,7 +17,7 @@ pub enum ObjConstr<'a> {
 pub struct ObjectConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: ObjConstr<'a>,
-    default: Option<&'a Mapping>,
+    pub default: Option<&'a Mapping>,
 }
 
 impl<'a> ObjectConstraint<'a> {
@@ -35,7 +35,7 @@ impl<'a> ObjectConstraint<'a> {
         }
     }
 
-    pub fn constraint(&self, path: &[&'a Value]) -> Result<&'a Constraint, DefaultFetchErr<'a>> {
+    pub fn constraint(&self, path: &[&'a Value]) -> Result<&Constraint<'a>, DefaultFetchErr<'a>> {
         match &self.constr {
             ObjConstr::Fields(f) => {
                 let key = path.iter().next().ok_or_else(|| DefaultFetchErr::PathIsTooShort(path.to_vec()))?;
@@ -157,15 +157,15 @@ pub enum ObjRule<'a> {
 pub struct ObjectRule<'a> {
     pub field_name: &'a Value,
     rule: ObjRule<'a>,
-    default: Option<&'a Mapping>,
+    pub default: Option<&'a Mapping>,
 }
 
 impl<'a> ObjectRule<'a> {
-    pub fn resolve(constraint: ObjectConstraint<'a>, root: &'a Value) -> ValueResolutionResult<'a> {
+    pub fn resolve(constraint: ObjectConstraint<'a>, root: &'a Value, context: &Constraint<'a>) -> ValueResolutionResult<'a> {
         match constraint.constr {
             ObjConstr::Fields(constraints) => {
                 let (ok, err): (Vec<_>, Vec<_>) = constraints.into_iter()
-                    .map(|(_, c)| Rule::new(c, root))
+                    .map(|(_, c)| Rule::new(c, root, context))
                     .partition(|b| b.all(Result::is_ok));
                 if err.is_empty() {
                     let map = ok.into_iter()
@@ -340,8 +340,6 @@ mod tests {
 
     #[test]
     fn resolving_any_is_err() {
-        // let name = valstr!()
-        // let strconstr = StringConstraint::default(field_name)
         let name = valstr!("any");
         let any = ObjectConstraint::default(&name);
         let vals = [valstr!("any"), valstr!("foo")];

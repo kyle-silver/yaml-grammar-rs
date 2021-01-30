@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use serde_yaml::{Mapping, Value};
 
-use crate::{parse::{PEType, ParseErr, YamlParseResult}, obj::{self, ObjectConstraint}, str::{self, StringConstraint}, valstr};
+use crate::{obj::{self, ObjectConstraint}, parse::{PEType, ParseErr, YamlParseResult}, str::{self, StringConstraint}, valstr, value_ref::DefaultFetchErr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Constraint<'a> {
@@ -76,6 +76,16 @@ impl<'a> Constraint<'a> {
             }
         } else {
             ParseErr::new(path, PEType::InvalidTypeInfo(field_name)).into()
+        }
+    }
+
+    pub fn fetch(&self, path: &[&'a Value]) -> Result<&Constraint<'a>, DefaultFetchErr<'a>> {
+        match &self {
+            Constraint::Str(s) => Err(DefaultFetchErr::IncorrectType {
+                residual_path: path.to_vec(),
+                constr: self.clone(),
+            }),
+            Constraint::Obj(o) => o.constraint(path),
         }
     }
 }
