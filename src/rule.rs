@@ -93,4 +93,11 @@ impl<'a> Rule<'a> {
             Rule::Obj(or) => or.eval(value, &path),
         }
     }
+
+    pub fn default(&self) -> Option<&'a Value> {
+        match self {
+            Rule::Str(s) => s.default,
+            Rule::Obj(o) => o.default,
+        }
+    }
 }

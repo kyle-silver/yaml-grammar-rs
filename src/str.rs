@@ -42,7 +42,7 @@ pub enum StrConstr<'a> {
 pub struct StringConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: StrConstr<'a>,
-    pub default: Option<&'a String>,
+    pub default: Option<&'a Value>,
 }
 
 impl<'a> StringConstraint<'a> {
@@ -50,7 +50,7 @@ impl<'a> StringConstraint<'a> {
         StringConstraint { field_name, constr: StrConstr::Any, default: None }
     }
 
-    fn new(field_name: &'a Value, constr: StrConstr<'a>, default: Option<&'a String>) -> StringConstraint<'a> {
+    fn new(field_name: &'a Value, constr: StrConstr<'a>, default: Option<&'a Value>) -> StringConstraint<'a> {
         StringConstraint { field_name, constr, default }
     }
 }
@@ -60,7 +60,7 @@ struct StringConstraintBuilder<'a, 'b> {
     field_name: &'a Value,
     config: &'a Mapping,
     path: &'b [&'a Value],
-    default: Option<&'a String>
+    default: Option<&'a Value>
 }
 
 impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
@@ -69,13 +69,13 @@ impl<'a, 'b> StringConstraintBuilder<'a, 'b> {
         Ok(Self { field_name, config, path, default })
     }
 
-    fn field_default(map: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a String>, ParseErr<'a>> {
+    fn field_default(map: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a Value>, ParseErr<'a>> {
         lazy_static! {
             static ref DEFAULT: Value = valstr!("default");
         }
         if let Some(val) = map.get(&DEFAULT) {
             match val {
-                Value::String(s) => Ok(Some(s)),
+                Value::String(s) => Ok(Some(val)),
                 _ => Err(ParseErr::new(path, PEType::InvalidDefault(val)))
             }
         } else {
@@ -224,7 +224,7 @@ impl<'a> StrRule<'a> {
 pub struct StringRule<'a> {
     pub field_name: &'a Value,
     rule: StrRule<'a>,
-    pub default: Option<&'a String>,
+    pub default: Option<&'a Value>,
 }
 
 impl<'a> From<StringRule<'a>> for Rule<'a> {

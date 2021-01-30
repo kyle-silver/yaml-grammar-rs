@@ -17,7 +17,7 @@ pub enum ObjConstr<'a> {
 pub struct ObjectConstraint<'a> {
     pub field_name: &'a Value,
     pub constr: ObjConstr<'a>,
-    pub default: Option<&'a Mapping>,
+    pub default: Option<&'a Value>,
 }
 
 impl<'a> ObjectConstraint<'a> {
@@ -25,7 +25,7 @@ impl<'a> ObjectConstraint<'a> {
         ObjectConstraint { field_name, constr: ObjConstr::Any, default: None }
     }
 
-    pub fn new(field_name: &'a Value, constr: ObjConstr<'a>, default: Option<&'a Mapping>) -> ObjectConstraint<'a> {
+    pub fn new(field_name: &'a Value, constr: ObjConstr<'a>, default: Option<&'a Value>) -> ObjectConstraint<'a> {
         ObjectConstraint { field_name, constr, default }
     }
 
@@ -75,7 +75,7 @@ struct ObjectConstraintBuilder<'a, 'b> {
     field_name: &'a Value,
     config: &'a Mapping,
     path: &'b [&'a Value],
-    default: Option<&'a Mapping>
+    default: Option<&'a Value>,
 }
 
 impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
@@ -84,13 +84,13 @@ impl<'a, 'b> ObjectConstraintBuilder<'a, 'b> {
         Ok(Self { field_name, config, path, default })
     }
 
-    fn field_default(config: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a Mapping>, ParseErr<'a>> {
+    fn field_default(config: &'a Mapping, path: &'b [&'a Value]) -> Result<Option<&'a Value>, ParseErr<'a>> {
         lazy_static! {
             static ref DEFAULT: Value = valstr!("default");
         }
         if let Some(val) = config.get(&DEFAULT) {
             match val {
-                Value::Mapping(m) => Ok(Some(m)),
+                Value::Mapping(_) => Ok(Some(val)),
                 _ => Err(ParseErr::new(path, PEType::InvalidDefault(val)))
             }
         } else {
@@ -157,7 +157,7 @@ pub enum ObjRule<'a> {
 pub struct ObjectRule<'a> {
     pub field_name: &'a Value,
     rule: ObjRule<'a>,
-    pub default: Option<&'a Mapping>,
+    pub default: Option<&'a Value>,
 }
 
 impl<'a> ObjectRule<'a> {
@@ -209,10 +209,12 @@ impl<'a> ObjectRule<'a> {
 
     pub fn subrule(key: &'a Value, rule: Rule<'a>, input: &'a Mapping, path: &[&'a Value]) -> RuleEvalResult<'a> {
         if let Some(value) = input.get(key) {
-            rule.eval(value, path)
-        } else {
-            RuleEvalErr::new(path, RuleErrType::KeyNotFound(key)).into()
+            return rule.eval(value, path);
         }
+        if let Some(value) = rule.default() {
+            return rule.eval(&value, path);
+        }
+        RuleEvalErr::new(path, RuleErrType::KeyNotFound(key)).into()
     }
 }
 

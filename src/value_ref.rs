@@ -70,7 +70,7 @@ impl<'a, T> ValueRef<'a, T> {
         root: &'a Value, 
         context: &Constraint<'a>, 
         to_type: fn(&'a Value) -> Option<&'a T>,
-        from_constr: fn(&Constraint<'a>) -> Option<&'a T>
+        from_constr: fn(&Constraint<'a>) -> Option<&'a Value>
     ) -> Result<&'a T, ValueResolutionErr<'a>> {
         match self {
             ValueRef::Literal(literal) => Ok(*literal),
@@ -95,7 +95,10 @@ impl<'a, T> ValueRef<'a, T> {
                 }
                 match context.fetch(abs_path) {
                     Ok(c) => if let Some(default) = from_constr(c) {
-                        Ok(default)
+                        match to_type(default) {
+                            Some(t) => Ok(t),
+                            None => Err(ValueResolutionErr::IncorrectType(default))
+                        }
                     } else {
                         Err(ValueResolutionErr::MissingRequired)
                     },
